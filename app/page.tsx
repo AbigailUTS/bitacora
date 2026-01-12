@@ -4,6 +4,16 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabaseClient";
 
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === "string") return err;
+  try {
+    return JSON.stringify(err);
+  } catch {
+    return String(err);
+  }
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -136,9 +146,9 @@ export default function LoginPage() {
                     setResetLoading(false);
                     if (error) setResetError(error.message);
                     else setResetSuccess('Se ha enviado el correo de recuperación si la cuenta existe.');
-                  } catch (err: any) {
+                  } catch (err: unknown) {
                     setResetLoading(false);
-                    setResetError(err?.message ?? 'Error al intentar recuperar contraseña');
+                    setResetError(getErrorMessage(err) || 'Error al intentar recuperar contraseña');
                   }
                 }}
                 className="rounded-md bg-green-600 px-4 py-2 text-white shadow hover:bg-green-700 disabled:opacity-60"

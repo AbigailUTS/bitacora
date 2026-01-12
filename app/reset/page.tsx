@@ -4,10 +4,20 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 
-function parseHash(hash: string) {
+function parseHash(hash: string): Record<string, string> {
   // remove leading #
   const str = hash.startsWith("#") ? hash.slice(1) : hash;
   return Object.fromEntries(new URLSearchParams(str));
+}
+
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === "string") return err;
+  try {
+    return JSON.stringify(err);
+  } catch {
+    return String(err);
+  }
 }
 
 export default function ResetPage() {
@@ -23,25 +33,25 @@ export default function ResetPage() {
     // Try to extract access_token from hash (Supabase may append it)
     if (typeof window === "undefined") return;
     const hashParams = parseHash(window.location.hash || "");
-    const searchParams = Object.fromEntries(new URLSearchParams(window.location.search));
+    const searchParams = Object.fromEntries(new URLSearchParams(window.location.search)) as Record<string, string>;
 
-    const accessToken = (hashParams as any).access_token || (searchParams as any).access_token || (searchParams as any).token;
+    const accessToken = hashParams['access_token'] || searchParams['access_token'] || searchParams['token'];
 
     // If Supabase provided an access token, set session so we can call updateUser
     (async () => {
       if (accessToken) {
         try {
-          const refresh_token = (hashParams as any).refresh_token || (searchParams as any).refresh_token || "";
+          const refresh_token = hashParams['refresh_token'] || searchParams['refresh_token'] || "";
           await supabase.auth.setSession({ access_token: accessToken, refresh_token });
           const { data } = await supabase.auth.getUser();
           setEmail(data.user?.email ?? null);
-        } catch (err: any) {
+        } catch (err: unknown) {
           console.error(err);
           setError("No se pudo establecer la sesión automáticamente. Abre el link completo o prueba a solicitar otro correo.");
         }
       } else {
         // If no access token, try to read email from querystring (if Supabase included it)
-        if ((searchParams as any).email) setEmail((searchParams as any).email);
+        if (searchParams['email']) setEmail(searchParams['email']);
       }
     })();
   }, []);
@@ -68,9 +78,9 @@ export default function ResetPage() {
         setMessage("Contraseña actualizada correctamente.");
         setTimeout(() => router.push("/menu"), 1500);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setLoading(false);
-      setError(err?.message ?? "Error al actualizar la contraseña");
+      setError(getErrorMessage(err) || "Error al actualizar la contraseña");
     }
   }
 
