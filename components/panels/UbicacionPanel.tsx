@@ -1,24 +1,15 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabaseClient";
 import { useIsAdmin } from "../../lib/useIsAdmin";
+import {
+  fetchUbicaciones,
+  addUbicacion,
+  removeUbicacion,
+  type UbicacionItem,
+} from "../../lib/ubicacionesService";
 import UbicacionCard from "../UbicacionCard";
 import UbicacionAdminPanel from "./UbicacionAdminPanel";
-
-interface UbicacionItem {
-  id: string;
-  nombre: string;
-  direccion: string;
-  link: string;
-}
-
-interface UbicacionRow {
-  id: number;
-  nombre: string;
-  descripcion: string;
-  link: string;
-}
 
 interface UbicacionPanelProps {
   onClose: () => void;
@@ -33,71 +24,42 @@ export default function UbicacionPanel({ onClose }: UbicacionPanelProps) {
   const [formData, setFormData] = useState({ nombre: "", direccion: "", link: "" });
 
   useEffect(() => {
-    const fetchUbicaciones = async () => {
+    const loadUbicaciones = async () => {
       setLoading(true);
-      setError(null);
-      const { data, error } = await supabase
-        .from("ubicacion")
-        .select("id,nombre,descripcion,link")
-        .order("nombre", { ascending: true });
-
-      if (error) {
-        setError(error.message);
-        setUbicaciones([]);
-      } else if (data) {
-        setUbicaciones(
-          data.map((d: UbicacionRow) => ({
-            id: String(d.id),
-            nombre: d.nombre,
-            direccion: d.descripcion,
-            link: d.link,
-          }))
-        );
+      const { data, error: fetchError } = await fetchUbicaciones();
+      if (fetchError) {
+        setError(fetchError);
+      } else {
+        setUbicaciones(data);
       }
       setLoading(false);
     };
 
-    fetchUbicaciones();
+    loadUbicaciones();
   }, []);
 
-  const addUbicacion = async () => {
-    if (formData.nombre.trim() && formData.direccion.trim() && formData.link.trim()) {
-      const { data, error } = await supabase
-        .from("ubicacion")
-        .insert([
-          {
-            nombre: formData.nombre.trim(),
-            descripcion: formData.direccion.trim(),
-            link: formData.link.trim(),
-          },
-        ])
-        .select("id,nombre,descripcion,link");
+  const handleAddUbicacion = async () => {
+    const { data, error: addError } = await addUbicacion(
+      formData.nombre,
+      formData.direccion,
+      formData.link
+    );
 
-      if (error) {
-        setError(error.message);
-      } else if (data && data.length > 0) {
-        const newUbicacion = {
-          id: String(data[0].id),
-          nombre: data[0].nombre,
-          direccion: data[0].descripcion,
-          link: data[0].link,
-        };
-        setUbicaciones([...ubicaciones, newUbicacion]);
-        setFormData({ nombre: "", direccion: "", link: "" });
-        setShowForm(false);
-      }
+    if (addError) {
+      setError(addError);
+    } else if (data) {
+      setUbicaciones([...ubicaciones, data]);
+      setFormData({ nombre: "", direccion: "", link: "" });
+      setShowForm(false);
     }
   };
 
-  const removeUbicacion = async (id: string) => {
-    const { error } = await supabase
-      .from("ubicacion")
-      .delete()
-      .eq("id", parseInt(id));
+  const handleRemoveUbicacion = async (id: string) => {
+    const { success, error: removeError } = await removeUbicacion(id);
 
-    if (error) {
-      setError(error.message);
-    } else {
+    if (removeError) {
+      setError(removeError);
+    } else if (success) {
       setUbicaciones(ubicaciones.filter((ub) => ub.id !== id));
     }
   };
@@ -114,7 +76,7 @@ export default function UbicacionPanel({ onClose }: UbicacionPanelProps) {
             setFormData={setFormData}
             showForm={showForm}
             setShowForm={setShowForm}
-            addUbicacion={addUbicacion}
+            addUbicacion={handleAddUbicacion}
             error={error}
             setError={setError}
           />
@@ -141,7 +103,7 @@ export default function UbicacionPanel({ onClose }: UbicacionPanelProps) {
               <UbicacionCard
                 key={ubicacion.id}
                 ubicacion={ubicacion}
-                onRemove={removeUbicacion}
+                onRemove={handleRemoveUbicacion}
                 isAdmin={isAdmin}
               />
             ))}
