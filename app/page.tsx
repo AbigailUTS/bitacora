@@ -30,10 +30,13 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (error) setError(error.message);
-    else router.push("/menu");
+    if (error) {
+      setError(error.message);
+    } else if (data?.user?.id) {
+      router.push("/menu");
+    }
   }
 
   return (

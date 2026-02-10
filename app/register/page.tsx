@@ -15,17 +15,21 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const { error } = await supabase.auth.signUp({ email, password });
-    if (error) {
-      setError(error.message);
+
+    // Create the user
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+    if (signUpError) {
+      setError(signUpError.message);
       setLoading(false);
       return;
     }
-    // Try to sign in after successful sign up
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+
     setLoading(false);
-    if (signInError) setError(signInError.message);
-    else router.push("/menu");
+    // Show success message and redirect to login
+    router.push("/");
   }
 
   return (
