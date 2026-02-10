@@ -1,9 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { supabase } from "../../lib/supabaseClient";
 
 interface DependenciasItem {
   id: string;
+  nombre: string;
+}
+
+interface DependenciaRow {
+  id: number;
   nombre: string;
 }
 
@@ -12,10 +18,32 @@ interface DependenciasPanelProps {
 }
 
 export default function DependenciasPanel({ onClose }: DependenciasPanelProps) {
-  const [dependencias, setDependencias] = useState<DependenciasItem[]>([
-    { id: "1", nombre: "Sede Central" },
-    { id: "2", nombre: "Sucursal Norte" },
-  ]);
+  const [dependencias, setDependencias] = useState<DependenciasItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchDependencias = async () => {
+      setLoading(true);
+      setError(null);
+      const { data, error } = await supabase
+        .from("dependencias")
+        .select("id,nombre")
+        .order("nombre", { ascending: true });
+
+      if (error) {
+        setError(error.message);
+        setDependencias([]);
+      } else if (data) {
+        setDependencias(
+          data.map((d: DependenciaRow) => ({ id: String(d.id), nombre: d.nombre }))
+        );
+      }
+      setLoading(false);
+    };
+
+    fetchDependencias();
+  }, []);
   const [inputValue, setInputValue] = useState("");
 
   const addDependencia = () => {
