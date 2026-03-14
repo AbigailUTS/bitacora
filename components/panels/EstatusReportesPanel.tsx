@@ -18,14 +18,16 @@ export default function EstatusReportesPanel({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState('fecha');
+  const [estatusFilter, setEstatusFilter] = useState('todos');
   const [search, setSearch] = useState('');
   const [selectedReporte, setSelectedReporte] = useState<(Reporte & { user_name?: string }) | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [newStatus, setNewStatus] = useState('');
+  const DIAS_LIMITE_FINALIZADO = 7; // Cambia este valor para modificar el rango de días
 
   const updateStatus = async () => {
     if (!selectedReporte) return;
-    const { error } = await supabase.from('reportes').update({ estatus_ticket: newStatus }).eq('id', selectedReporte.id);
+    const { error } = await supabase.from('reportes').update({ estatus_ticket: newStatus, updated_at: new Date() }).eq('id', selectedReporte.id);
     if (error) {
       setError('Error al actualizar el estado del reporte');
     } else {
@@ -112,7 +114,24 @@ export default function EstatusReportesPanel({
     return 0;
   });
 
-  const filteredReportes = isAdmin && search ? sortedReportes.filter(r => r.user_name?.toLowerCase().includes(search.toLowerCase())) : sortedReportes;
+  let filteredReportes = sortedReportes;
+  if (!isAdmin) {
+    // Si no es admin, ocultar reportes finalizados más antiguos de DIAS_LIMITE_FINALIZADO
+    const limite = new Date();
+    limite.setDate(limite.getDate() - DIAS_LIMITE_FINALIZADO);
+    filteredReportes = filteredReportes.filter(r => {
+      if (r.estatus_ticket === "finalizado") {
+        return new Date(r.created_at) >= limite;
+      }
+      return true;
+    });
+  }
+  if (estatusFilter !== 'todos') {
+    filteredReportes = filteredReportes.filter(r => r.estatus_ticket === estatusFilter);
+  }
+  if (isAdmin && search) {
+    filteredReportes = filteredReportes.filter(r => r.user_name?.toLowerCase().includes(search.toLowerCase()));
+  }
 
   if (loading || adminLoading) {
     return <div className="text-center">Cargando...</div>;
@@ -145,7 +164,8 @@ export default function EstatusReportesPanel({
         </div>
       )}
 
-      <div>
+
+      <div className="flex gap-2 mb-2">
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
@@ -153,6 +173,16 @@ export default function EstatusReportesPanel({
         >
           <option value="fecha">Ordenar por fecha</option>
           <option value="urgencia">Ordenar por urgencia (mayor a menor)</option>
+        </select>
+        <select
+          value={estatusFilter}
+          onChange={(e) => setEstatusFilter(e.target.value)}
+          className="border border-gray-300 rounded px-3 py-2"
+        >
+          <option value="todos">Mostrar todos</option>
+          <option value="finalizado">Solo finalizados</option>
+          <option value="en progreso">Solo en proceso</option>
+          <option value="pendiente">Solo pendientes</option>
         </select>
       </div>
 

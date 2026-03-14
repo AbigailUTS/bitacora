@@ -24,6 +24,8 @@ interface MenuLink {
   fullDescription: string;
 }
 
+import HistorialReportesPanel from "./panels/HistorialReportesPanel";
+
 const menuLinks: MenuLink[] = [
   {
     id: "generar-reporte",
@@ -65,6 +67,34 @@ const menuLinks: MenuLink[] = [
           strokeLinejoin="round"
           strokeWidth="2"
           d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"
+        />
+      </svg>
+    ),
+  },
+  {
+    id: "historial-reportes",
+    label: "Historial de reportes",
+    color: "blue",
+    fullDescription: "Consulta el historial de reportes finalizados recientes o de todos los usuarios si eres admin.",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-8 w-8"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M8 17l4 4 4-4m-4-5v9"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M20.24 12.24A9 9 0 103 21.02"
         />
       </svg>
     ),
@@ -259,6 +289,7 @@ export default function DashboardLayout({
               <div className="flex-1 overflow-auto animate-in fade-in duration-300 px-8 py-8">
                 {activePanel === "generar-reporte" && <GenerarReportePanel onClose={closePanel} />}
                 {activePanel === "estatus-de-reportes" && <EstatusReportesPanel onClose={closePanel} />}
+                {activePanel === "historial-reportes" && <HistorialReportesPanel onClose={closePanel} />}
                 {activePanel === "graficas" && <GraficasPanel onClose={closePanel} />}
                 {activePanel === "dependencias" && <DependenciasPanel onClose={closePanel} />}
                 {activePanel === "ubicacion" && <UbicacionPanel onClose={closePanel} />}
