@@ -5,7 +5,7 @@ export interface Reporte {
   asunto: string;
   descripcion: string;
   evidencias?: string; // puede ser null
-  dependencia_id?: string; // referencia a tabla dependencias
+  dependencia_id: number; // referencia a tabla dependencias, bigint not null
   urgencia_reporte: string; // 'no urgente' | 'normal' | 'urgente' | 'muy urgente'
   estatus_ticket: string; // 'pendiente' | 'en progreso' | 'finalizado'
   // rol se obtiene de otra tabla mediante join

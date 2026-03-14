@@ -84,12 +84,18 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
       return;
     }
 
+    const dependenciaIdNum = parseInt(dependenciaId);
+    if (isNaN(dependenciaIdNum)) {
+      setNotification({ type: "error", message: "Dependencia inválida." });
+      return;
+    }
+
     const payload: ReporteInsert = {
       usuario_id: usuarioId,
       asunto: asunto.trim(),
       descripcion: descripcion.trim(),
       evidencias: evidencias?.trim() || undefined,
-      dependencia_id: dependenciaId,
+      dependencia_id: dependenciaIdNum,
       urgencia_reporte: urgenciaReporte,
       estatus_ticket: "pendiente",
     };
