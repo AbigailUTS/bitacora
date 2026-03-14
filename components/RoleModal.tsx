@@ -1,78 +1,134 @@
 "use client";
 
+
 import React, { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { useIsAdmin } from "../lib/useIsAdmin";
 
-interface RoleModalProps {
+interface InformacionUsuarioModalProps {
   userId: string;
-  onRoleAssigned?: () => void;
+  onInfoAssigned?: () => void;
 }
 
-export default function RoleModal({ userId, onRoleAssigned }: RoleModalProps) {
+export default function InformacionUsuarioModal({ userId, onInfoAssigned }: InformacionUsuarioModalProps) {
   const [showModal, setShowModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState("");
-  const [roleLoading, setRoleLoading] = useState(false);
-  const [roleError, setRoleError] = useState<string | null>(null);
+  const [nombre, setNombre] = useState("");
+  const [apellidos, setApellidos] = useState("");
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const roles = ["Ingeniero", "Técnico", "Licenciado", "Practicante"];
+  const { isAdmin } = useIsAdmin();
 
   useEffect(() => {
-    const checkUserRole = async () => {
-      const { data: roleData, error: roleError } = await supabase
+    const checkUserInfo = async () => {
+      // Checar si ya existe registro por id, nombre+apellidos, o email
+      const { data: userData, error: userError } = await supabase
         .from("user_roles")
-        .select("role")
-        .eq("id", userId)
-        .single();
+        .select("id, nombre, apellidos, email")
+        .or(`id.eq.${userId},and(nombre.eq.${nombre},apellidos.eq.${apellidos}),email.eq.${email}`)
+        .maybeSingle();
 
-      // Si no hay error y hay datos con rol, el usuario ya tiene su información
-      if (!roleError && roleData?.role) {
+      if (!userError && userData) {
+        // Si falta nombre, apellidos o email, mostrar modal para completar
+        if (!userData.nombre || !userData.apellidos || !userData.email) {
+          setShowModal(true);
+          setError(null);
+          return;
+        }
+        // Ya existe registro completo, no mostrar modal
         return;
       }
 
-      // Solo mostrar modal si no hay datos (error PGRST116 es "no rows found")
-      if (roleError?.code === "PGRST116" || !roleData?.role) {
-        setShowModal(true);
-        setRoleError(null);
-        return;
-      }
+      // Si no existe, mostrar modal
+      setShowModal(true);
+      setError(null);
+    };
+    checkUserInfo();
+  }, [userId, nombre, apellidos, email]);
 
-      // Para otros errores, mostrar error y no mostrar modal
-      if (roleError) {
-        const message = typeof roleError === "object" && "message" in roleError ? (roleError as { message: string }).message : "Error al verificar rol";
-        setRoleError(message);
+  useEffect(() => {
+    // Obtener email del usuario actual si no es admin
+    const fetchUser = async () => {
+      if (!isAdmin) {
+        const { data, error } = await supabase.auth.getUser();
+        if (data?.user?.email) setEmail(data.user.email);
       }
     };
+    fetchUser();
+  }, [isAdmin]);
 
-    checkUserRole();
-  }, [userId]);
-
-  async function handleSaveRole() {
-    if (!selectedRole) {
-      setRoleError("Por favor selecciona un rol");
+  async function handleSaveInfo() {
+    if (!selectedRole || !nombre.trim() || !apellidos.trim()) {
+      setError("Completa todos los campos obligatorios");
       return;
     }
 
-    setRoleLoading(true);
-    setRoleError(null);
+    setLoading(true);
+    setError(null);
 
-    // Verificar que no exista rol para este usuario
-    const { data: existingRole, error: checkError } = await supabase
+    // Checar duplicados por id, nombre+apellidos, o email
+    const { data: existing, error: checkError } = await supabase
       .from("user_roles")
       .select("id")
-      .eq("id", userId)
-      .single();
-
+      .or(`id.eq.${userId},and(nombre.eq.${nombre},apellidos.eq.${apellidos}),email.eq.${email}`)
+      .maybeSingle();
+console.log("Check existing:", { existing, checkError });
     if (checkError && checkError.code !== "PGRST116") {
-      // PGRST116 significa "no rows found", que es lo esperado
-      setRoleError(checkError.message);
-      setRoleLoading(false);
+      setError(checkError.message);
+      setLoading(false);
       return;
     }
 
-    if (existingRole) {
-      // El usuario ya tiene un rol asignado, no insertar duplicado
-      setShowModal(false);
-      setSelectedRole("");
-      if (onRoleAssigned) onRoleAssigned();
+
+    if (existing) {
+      // Actualizar el registro existente con la nueva información
+      // Si el email es nulo o vacío, asignar automáticamente el email del usuario actual
+      let finalEmail = email;
+      if (!finalEmail) {
+        const { data } = await supabase.auth.getUser();
+        finalEmail = data?.user?.email || "";
+      }
+      if (!finalEmail) {
+        setError("No se pudo obtener el email del usuario actual.");
+        setLoading(false);
+        return;
+      }
+      // Usar siempre el id del usuario autenticado para actualizar
+      const { error: updateError } = await supabase
+        .from("user_roles")
+        .update({
+          role: selectedRole,
+          nombre: nombre.trim(),
+          apellidos: apellidos.trim(),
+          email: finalEmail,
+        })
+        .eq("id", userId);
+      setLoading(false);
+      if (updateError) {
+        setError(updateError.message);
+      } else {
+        setShowModal(false);
+        setSelectedRole("");
+        setNombre("");
+        setApellidos("");
+        setEmail("");
+        if (onInfoAssigned) onInfoAssigned();
+      }
+      return;
+    }
+
+    // Si el email es nulo o vacío, asignar automáticamente el email del usuario actual
+    let finalEmail = email;
+    if (!finalEmail) {
+      const { data } = await supabase.auth.getUser();
+      finalEmail = data?.user?.email || "";
+    }
+
+    if (!finalEmail) {
+      setError("No se pudo obtener el email del usuario actual.");
+      setLoading(false);
       return;
     }
 
@@ -80,16 +136,22 @@ export default function RoleModal({ userId, onRoleAssigned }: RoleModalProps) {
       {
         id: userId,
         role: selectedRole,
+        nombre: nombre.trim(),
+        apellidos: apellidos.trim(),
+        email: finalEmail,
       },
     ]);
 
-    setRoleLoading(false);
+    setLoading(false);
     if (insertError) {
-      setRoleError(insertError.message);
+      setError(insertError.message);
     } else {
       setShowModal(false);
       setSelectedRole("");
-      if (onRoleAssigned) onRoleAssigned();
+      setNombre("");
+      setApellidos("");
+      setEmail("");
+      if (onInfoAssigned) onInfoAssigned();
     }
   }
 
@@ -102,8 +164,8 @@ export default function RoleModal({ userId, onRoleAssigned }: RoleModalProps) {
       <div className="absolute inset-0 bg-black/50" onClick={() => {}} />
 
       <div className="relative w-full max-w-md rounded bg-white p-6 shadow-lg">
-        <h3 className="mb-2 text-lg font-semibold">Completar información</h3>
-        <p className="mb-4 text-sm text-black">Por favor selecciona tu rol para completar tu perfil.</p>
+        <h3 className="mb-2 text-lg font-semibold">Completar información de usuario</h3>
+        <p className="mb-4 text-sm text-black">Por favor completa tu información para continuar.</p>
 
         <label className="text-sm text-black">Rol</label>
         <select
@@ -121,16 +183,44 @@ export default function RoleModal({ userId, onRoleAssigned }: RoleModalProps) {
           ))}
         </select>
 
-        {roleError && <div className="mb-3 text-sm text-red-600">{roleError}</div>}
+        <label className="text-sm text-black">Nombre</label>
+        <input
+          type="text"
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+          className="w-full rounded-md border border-zinc-200 px-3 py-2 mt-2 mb-3 focus:border-green-500 focus:ring-2 focus:ring-green-100"
+          required
+        />
+
+        <label className="text-sm text-black">Apellidos</label>
+        <input
+          type="text"
+          value={apellidos}
+          onChange={(e) => setApellidos(e.target.value)}
+          className="w-full rounded-md border border-zinc-200 px-3 py-2 mt-2 mb-3 focus:border-green-500 focus:ring-2 focus:ring-green-100"
+          required
+        />
+
+        <label className="text-sm text-black">Email</label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full rounded-md border border-zinc-200 px-3 py-2 mt-2 mb-3 focus:border-green-500 focus:ring-2 focus:ring-green-100"
+          required={!isAdmin}
+          disabled={!isAdmin}
+        />
+
+        {error && <div className="mb-3 text-sm text-red-600">{error}</div>}
 
         <div className="mt-3 flex justify-end gap-3">
           <button
-            onClick={handleSaveRole}
+            onClick={handleSaveInfo}
             className="rounded-md bg-green-600 px-4 py-2 text-white shadow hover:bg-green-700 disabled:opacity-60"
             type="button"
-            disabled={roleLoading}
+            disabled={loading}
           >
-            {roleLoading ? "Guardando..." : "Guardar rol"}
+            {loading ? "Guardando..." : "Guardar información"}
           </button>
         </div>
       </div>

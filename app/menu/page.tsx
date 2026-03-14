@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 import DashboardLayout from "../../components/DashboardLayout";
-import RoleModal from "../../components/RoleModal";
+import InformacionUsuarioModal from "../../components/RoleModal";
 
 export default function MenuPage() {
   const [email, setEmail] = useState<string | undefined>(undefined);
@@ -49,7 +49,7 @@ export default function MenuPage() {
 
   return (
     <>
-      {userId && <RoleModal userId={userId} />}
+      {userId && <InformacionUsuarioModal userId={userId} />}
       <DashboardLayout
         userEmail={email}
         userName={name}
