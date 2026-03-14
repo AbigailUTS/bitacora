@@ -1,7 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { fetchDependencias, DependenciasItem } from "../../lib/dependenciasService";
+import {
+  fetchDependencias,
+  DependenciasItem,
+} from "../../lib/dependenciasService";
 import { supabase } from "../../lib/supabaseClient";
 import { fetchUserRole, createReporte } from "../../lib/reportesService";
 import { ReporteInsert } from "../../lib/models/reporte";
@@ -15,15 +18,22 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
   const [saving, setSaving] = useState(false);
   const [dependencias, setDependencias] = useState<DependenciasItem[]>([]);
   const [loadingDeps, setLoadingDeps] = useState(false);
+  const [notification, setNotification] = useState<{
+    type: "error" | "success" | "warning";
+    message: string;
+  } | null>(null);
 
   const [usuarioId, setUsuarioId] = useState<string | null>(null);
   const [usuarioEmail, setUsuarioEmail] = useState<string | null>(null);
   const [rol, setRol] = useState<string | null>(null);
-  const [dependenciaId, setDependenciaId] = useState<string | undefined>(undefined);
+  const [dependenciaId, setDependenciaId] = useState<string | undefined>(
+    undefined,
+  );
   const [asunto, setAsunto] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [evidencias, setEvidencias] = useState("");
-  const [urgenciaReporte, setUrgenciaReporte] = useState<ReporteInsert['urgencia_reporte']>('normal');
+  const [urgenciaReporte, setUrgenciaReporte] =
+    useState<ReporteInsert["urgencia_reporte"]>("normal");
 
   useEffect(() => {
     async function loadDeps() {
@@ -46,11 +56,33 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
     loadUser();
   }, []);
 
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => {
+        setNotification(null);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
   async function handleSubmit(e?: React.FormEvent) {
     e?.preventDefault();
-    if (!usuarioId) return alert('No se detectó usuario.');
-    if (!asunto.trim()) return alert('Asunto requerido.');
-    if (!descripcion.trim()) return alert('Descripción requerida.');
+    if (!usuarioId) {
+      setNotification({ type: "error", message: "No se detectó usuario." });
+      return;
+    }
+    if (!asunto.trim()) {
+      setNotification({ type: "error", message: "Asunto requerido." });
+      return;
+    }
+    if (!descripcion.trim()) {
+      setNotification({ type: "error", message: "Descripción requerida." });
+      return;
+    }
+    if (dependenciaId === undefined) {
+      setNotification({ type: "error", message: "Dependencia requerida." });
+      return;
+    }
 
     const payload: ReporteInsert = {
       usuario_id: usuarioId,
@@ -59,27 +91,33 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
       evidencias: evidencias?.trim() || undefined,
       dependencia_id: dependenciaId,
       urgencia_reporte: urgenciaReporte,
-      estatus_ticket: 'pendiente',
+      estatus_ticket: "pendiente",
     };
 
     setSaving(true);
     const { data, error } = await createReporte(payload);
     setSaving(false);
     if (error) {
-      alert('Error al crear reporte: ' + error);
+      setNotification({
+        type: "error",
+        message: "Error al crear reporte: " + error,
+      });
       return;
     }
 
     setShowModal(false);
     // limpiar formulario
-    setAsunto('');
-    setDescripcion('');
-    setEvidencias('');
+    setAsunto("");
+    setDescripcion("");
+    setEvidencias("");
     setDependenciaId(undefined);
-    setUrgenciaReporte('normal');
+    setUrgenciaReporte("normal");
 
     if (onClose) onClose();
-    alert('Reporte creado correctamente.');
+    setNotification({
+      type: "success",
+      message: "Reporte creado correctamente.",
+    });
   }
 
   return (
@@ -100,57 +138,159 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white w-full max-w-2xl mx-4 rounded-lg p-6">
+          {notification && (
+            <div
+              className={`absolute top-8 right-8 max-w-sm rounded-lg shadow-lg flex items-start gap-3 p-4 animate-in slide-in-from-top-2 ${
+                notification.type === "error"
+                  ? "bg-red-50 border border-red-200"
+                  : notification.type === "success"
+                    ? "bg-green-50 border border-green-200"
+                    : "bg-yellow-50 border border-yellow-200"
+              }`}
+            >
+              <div
+                className={`flex-shrink-0 h-5 w-5 rounded-full mt-0.5 ${
+                  notification.type === "error"
+                    ? "bg-red-500"
+                    : notification.type === "success"
+                      ? "bg-green-500"
+                      : "bg-yellow-500"
+                }`}
+              />
+              <p
+                className={`text-sm font-medium ${
+                  notification.type === "error"
+                    ? "text-red-800"
+                    : notification.type === "success"
+                      ? "text-green-800"
+                      : "text-yellow-800"
+                }`}
+              >
+                {notification.message}
+              </p>
+              <button
+                onClick={() => setNotification(null)}
+                className={`flex-shrink-0 h-5 w-5 flex items-center justify-center rounded hover:bg-white/50 transition ${
+                  notification.type === "error"
+                    ? "text-red-600"
+                    : notification.type === "success"
+                      ? "text-green-600"
+                      : "text-yellow-600"
+                }`}
+              >
+                ×
+              </button>
+            </div>
+          )}
+
+          <div className="bg-white w-full max-w-2xl mx-4 rounded-lg p-6 max-h-screen overflow-y-auto">
             <h4 className="text-lg font-semibold mb-3">Nuevo reporte</h4>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-700 mb-1">Fecha</label>
-                  <input value={new Date().toLocaleString()} disabled className="w-full px-3 py-2 border rounded bg-gray-100" />
+                  <label className="block text-sm text-gray-700 mb-1">
+                    Fecha
+                  </label>
+                  <input
+                    value={new Date().toLocaleString()}
+                    disabled
+                    className="w-full px-3 py-2 border rounded bg-gray-100"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-700 mb-1">Usuario</label>
-                  <input value={usuarioEmail ?? '—'} disabled className="w-full px-3 py-2 border rounded bg-gray-100" />
+                  <label className="block text-sm text-gray-700 mb-1">
+                    Usuario
+                  </label>
+                  <input
+                    value={usuarioEmail ?? "—"}
+                    disabled
+                    className="w-full px-3 py-2 border rounded bg-gray-100"
+                  />
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm text-gray-700 mb-1">Rol</label>
-                <input value={rol ?? '—'} disabled className="w-full px-3 py-2 border rounded bg-gray-100" />
+                <input
+                  value={rol ?? "—"}
+                  disabled
+                  className="w-full px-3 py-2 border rounded bg-gray-100"
+                />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 mb-1">Dependencia</label>
-                <select value={dependenciaId || ''} onChange={(ev) => setDependenciaId(ev.target.value || undefined)} className="w-full px-3 py-2 border rounded">
+                <label className="block text-sm text-gray-700 mb-1">
+                  Dependencia
+                </label>
+                <select
+                  value={dependenciaId || ""}
+                  onChange={(ev) =>
+                    setDependenciaId(ev.target.value || undefined)
+                  }
+                  className="w-full px-3 py-2 border rounded"
+                >
                   <option value="">Seleccionar...</option>
                   {loadingDeps ? (
                     <option>cargando...</option>
                   ) : (
                     dependencias.map((d) => (
-                      <option key={d.id} value={d.id}>{d.nombre}</option>
+                      <option key={d.id} value={d.id}>
+                        {d.nombre}
+                      </option>
                     ))
                   )}
                 </select>
               </div>
 
-             <div>
-                <label className="block text-sm text-gray-700 mb-1">Asunto</label>
-                <textarea value={asunto} onChange={(e) => setAsunto(e.target.value)} rows={2} className="w-full px-3 py-2 border rounded" />
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">
+                  Asunto
+                </label>
+                <textarea
+                  value={asunto}
+                  onChange={(e) => setAsunto(e.target.value)}
+                  rows={2}
+                  className="w-full px-3 py-2 border rounded"
+                />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 mb-1">Descripción</label>
-                <textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} rows={6} className="w-full px-3 py-2 border rounded" />
+                <label className="block text-sm text-gray-700 mb-1">
+                  Descripción
+                </label>
+                <textarea
+                  value={descripcion}
+                  onChange={(e) => setDescripcion(e.target.value)}
+                  rows={6}
+                  className="w-full px-3 py-2 border rounded"
+                />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 mb-1">Evidencias (URL)</label>
-                <input value={evidencias} onChange={(e) => setEvidencias(e.target.value)} placeholder="https://..." className="w-full px-3 py-2 border rounded" />
+                <label className="block text-sm text-gray-700 mb-1">
+                  Evidencias (URL)
+                </label>
+                <input
+                  value={evidencias}
+                  onChange={(e) => setEvidencias(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full px-3 py-2 border rounded"
+                />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 mb-1">Urgencia</label>
-                <select value={urgenciaReporte} onChange={(e) => setUrgenciaReporte(e.target.value as ReporteInsert['urgencia_reporte'])} className="w-full px-3 py-2 border rounded">
+                <label className="block text-sm text-gray-700 mb-1">
+                  Urgencia
+                </label>
+                <select
+                  value={urgenciaReporte}
+                  onChange={(e) =>
+                    setUrgenciaReporte(
+                      e.target.value as ReporteInsert["urgencia_reporte"],
+                    )
+                  }
+                  className="w-full px-3 py-2 border rounded"
+                >
                   <option value="no urgente">no urgente</option>
                   <option value="normal">normal</option>
                   <option value="urgente">urgente</option>
@@ -159,8 +299,20 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
               </div>
 
               <div className="flex gap-3 justify-end pt-3">
-                <button type="button" onClick={() => setShowModal(false)} className="bg-gray-200 px-4 py-2 rounded">Cancelar</button>
-                <button type="submit" disabled={saving} className="bg-indigo-600 text-white px-4 py-2 rounded">{saving ? 'Guardando...' : 'Aceptar'}</button>
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="bg-gray-200 px-4 py-2 rounded"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="bg-indigo-600 text-white px-4 py-2 rounded"
+                >
+                  {saving ? "Guardando..." : "Aceptar"}
+                </button>
               </div>
             </form>
           </div>
