@@ -14,13 +14,13 @@ export default function EstatusReportesPanel({
   onClose,
 }: EstatusReportesProps) {
   const { isAdmin, loading: adminLoading } = useIsAdmin();
-  const [reportes, setReportes] = useState<(Reporte & { user_name?: string; dependencia_nombre?: string; area_nombre?: string })[]>([]);
+  const [reportes, setReportes] = useState<(Reporte & { user_name?: string; dependencia_nombre?: string; area_nombre?: string; clasificacion_nombre?: string })[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState('fecha');
   const [estatusFilter, setEstatusFilter] = useState('todos');
   const [search, setSearch] = useState('');
-  const [selectedReporte, setSelectedReporte] = useState<(Reporte & { user_name?: string; dependencia_nombre?: string; area_nombre?: string }) | null>(null);
+  const [selectedReporte, setSelectedReporte] = useState<(Reporte & { user_name?: string; dependencia_nombre?: string; area_nombre?: string; clasificacion_nombre?: string }) | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [newStatus, setNewStatus] = useState('');
   const DIAS_LIMITE_FINALIZADO = 7; // Cambia este valor para modificar el rango de días
@@ -226,6 +226,7 @@ export default function EstatusReportesPanel({
                 <p>Creado: {new Date(reporte.created_at).toLocaleDateString()}</p>
                 <p>Dependencia: {reporte.dependencia_nombre}</p>
                 <p>Área: {reporte.area_nombre}</p>
+                <p>Clasificación: {reporte.clasificacion_nombre}</p>
                 {isAdmin && reporte.user_name && (
                   <p>Creado por: {reporte.user_name}</p>
                 )}
@@ -241,7 +242,8 @@ export default function EstatusReportesPanel({
             <h4 className="font-medium text-gray-900 mb-4">Modificar estado del reporte</h4>
             <p className="text-sm text-gray-600 mb-2"><strong>Asunto:</strong> {selectedReporte.asunto}</p>
             <p className="text-sm text-gray-600 mb-2"><strong>Dependencia:</strong> {selectedReporte.dependencia_nombre}</p>
-            <p className="text-sm text-gray-600 mb-4"><strong>Área:</strong> {selectedReporte.area_nombre}</p>
+            <p className="text-sm text-gray-600 mb-2"><strong>Área:</strong> {selectedReporte.area_nombre}</p>
+            <p className="text-sm text-gray-600 mb-4"><strong>Clasificación:</strong> {selectedReporte.clasificacion_nombre}</p>
             <select
               value={newStatus}
               onChange={(e) => setNewStatus(e.target.value)}

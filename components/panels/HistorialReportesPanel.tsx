@@ -14,7 +14,7 @@ const DIAS_HISTORIAL = 90; // Cambia este valor para modificar el rango de días
 
 export default function HistorialReportesPanel({ onClose }: HistorialReportesProps) {
   const { isAdmin, loading: adminLoading } = useIsAdmin();
-  const [reportes, setReportes] = useState<(Reporte & { user_name?: string; dependencia_nombre?: string; area_nombre?: string })[]>([]);
+  const [reportes, setReportes] = useState<(Reporte & { user_name?: string; dependencia_nombre?: string; area_nombre?: string; clasificacion_nombre?: string })[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState('fecha');
@@ -144,6 +144,7 @@ export default function HistorialReportesPanel({ onClose }: HistorialReportesPro
                 <p>Creado: {new Date(reporte.created_at).toLocaleDateString()}</p>
                 <p>Dependencia: {reporte.dependencia_nombre}</p>
                 <p>Área: {reporte.area_nombre}</p>
+                <p>Clasificación: {reporte.clasificacion_nombre}</p>
                 {isAdmin && reporte.user_name && (
                   <p>Creado por: {reporte.user_name}</p>
                 )}

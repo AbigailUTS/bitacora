@@ -7,6 +7,7 @@ import {
 } from "../../lib/dependenciasService";
 import { supabase } from "../../lib/supabaseClient";
 import { fetchUserRole, createReporte, fetchAreasByDependenciaForReportes, type AreaOption } from "../../lib/reportesService";
+import { fetchClasificaciones, type ClasificacionItem } from "../../lib/clasificacionesService";
 import { ReporteInsert } from "../../lib/models/reporte";
 
 interface GenerarReporteProps {
@@ -20,6 +21,8 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
   const [loadingDeps, setLoadingDeps] = useState(false);
   const [areas, setAreas] = useState<AreaOption[]>([]);
   const [loadingAreas, setLoadingAreas] = useState(false);
+  const [clasificaciones, setClasificaciones] = useState<ClasificacionItem[]>([]);
+  const [loadingClasificaciones, setLoadingClasificaciones] = useState(false);
   const [notification, setNotification] = useState<{
     type: "error" | "success" | "warning";
     message: string;
@@ -32,6 +35,7 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
     undefined,
   );
   const [areaId, setAreaId] = useState<string | undefined>(undefined);
+  const [clasificacionId, setClasificacionId] = useState<string | undefined>(undefined);
   const [asunto, setAsunto] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [evidencias, setEvidencias] = useState("");
@@ -46,6 +50,14 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
       setLoadingDeps(false);
     }
     loadDeps();
+
+    async function loadClasificaciones() {
+      setLoadingClasificaciones(true);
+      const { data, error } = await fetchClasificaciones();
+      if (!error) setClasificaciones(data);
+      setLoadingClasificaciones(false);
+    }
+    loadClasificaciones();
 
     async function loadUser() {
       const { data, error } = await supabase.auth.getUser();
@@ -70,9 +82,11 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
         }
         setLoadingAreas(false);
       })();
-    } else {
+    } else { 
+      (async () => {
       setAreas([]);
       setAreaId(undefined);
+      })(); 
     }
   }, [dependenciaId]);
 
@@ -107,6 +121,10 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
       setNotification({ type: "error", message: "Área requerida." });
       return;
     }
+    if (clasificacionId === undefined) {
+      setNotification({ type: "error", message: "Clasificación requerida." });
+      return;
+    }
 
     const dependenciaIdNum = parseInt(dependenciaId);
     if (isNaN(dependenciaIdNum)) {
@@ -116,6 +134,7 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
 
     // Si el área es "general", no enviar area_id
     const areaIdNum = areaId && areaId !== 'general' ? parseInt(areaId) : null;
+    const clasificacionIdNum = parseInt(clasificacionId);
 
     const payload: ReporteInsert = {
       usuario_id: usuarioId,
@@ -124,6 +143,7 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
       evidencias: evidencias?.trim() || undefined,
       dependencia_id: dependenciaIdNum,
       area_id: areaIdNum,
+      clasificacion_id: clasificacionIdNum,
       urgencia_reporte: urgenciaReporte,
       estatus_ticket: "pendiente",
     };
@@ -146,6 +166,7 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
     setEvidencias("");
     setDependenciaId(undefined);
     setAreaId(undefined);
+    setClasificacionId(undefined);
     setUrgenciaReporte("normal");
 
     if (onClose) onClose();
@@ -294,6 +315,28 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
                     areas.map((a) => (
                       <option key={a.id} value={a.id}>
                         {a.nombre}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">
+                  Clasificación
+                </label>
+                <select
+                  value={clasificacionId || ""}
+                  onChange={(ev) => setClasificacionId(ev.target.value || undefined)}
+                  className="w-full px-3 py-2 border rounded"
+                >
+                  <option value="">Seleccionar...</option>
+                  {loadingClasificaciones ? (
+                    <option>cargando...</option>
+                  ) : (
+                    clasificaciones.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nombre}
                       </option>
                     ))
                   )}

@@ -50,13 +50,16 @@ console.log('createReporte result:', { data, error });
   return { data, error: null };
 }
 
-export async function fetchReportes(userId: string, isAdmin: boolean): Promise<{ data: (Reporte & { user_name?: string; dependencia_nombre?: string; area_nombre?: string })[] | null; error: string | null }> {
+export async function fetchReportes(userId: string, isAdmin: boolean): Promise<{ data: (Reporte & { user_name?: string; dependencia_nombre?: string; area_nombre?: string; clasificacion_nombre?: string })[] | null; error: string | null }> {
   let reportesQuery = supabase.from('reportes').select(`
     *,
     dependencias:dependencia_id (
       nombre
     ),
     areas:area_id (
+      nombre
+    ),
+    clasificacion:clasificacion_id (
       nombre
     )
   `);
@@ -81,6 +84,7 @@ export async function fetchReportes(userId: string, isAdmin: boolean): Promise<{
       user_name: 'Desconocido',
       dependencia_nombre: reporte.dependencias?.nombre || 'Sin dependencia',
       area_nombre: reporte.areas?.nombre || 'General',
+      clasificacion_nombre: reporte.clasificacion?.nombre || 'Sin clasificar',
     }));
     return { data: transformedData, error: null };
   }
@@ -91,6 +95,7 @@ export async function fetchReportes(userId: string, isAdmin: boolean): Promise<{
     user_name: userMap.get(reporte.usuario_id) || 'Desconocido',
     dependencia_nombre: reporte.dependencias?.nombre || 'Sin dependencia',
     area_nombre: reporte.areas?.nombre || 'General',
+    clasificacion_nombre: reporte.clasificacion?.nombre || 'Sin clasificar',
   }));
   return { data: transformedData, error: null };
 }
