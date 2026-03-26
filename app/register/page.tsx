@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { supabase } from "../../lib/supabaseClient";
 
 export default function RegisterPage() {
@@ -39,12 +40,30 @@ export default function RegisterPage() {
     >
       <main className="w-full max-w-3xl rounded-xl bg-white p-8 shadow-md">
         <div className="flex flex-col items-center gap-4 md:flex-row md:items-start md:gap-8">
-          <div className="hidden md:block md:w-1/3">
-            <div className="rounded-lg bg-gradient-to-tr from-green-500 to-teal-500 p-6 text-white">
-              <h2 className="text-xl font-bold">Comienza ahora</h2>
-              <p className="mt-2 text-sm opacity-90">Regístrate para crear y gestionar tu bitácora personal.</p>
-            </div>
-          </div>
+<div className="hidden md:flex md:w-1/3 flex-col items-center gap-4">
+
+  {/* LOGO FUERA DEL CUADRO */}
+  <Image
+    src="/img/logopresidencia.jpg"
+    alt="Logo Presidencia"
+    width={160}
+    height={160}
+  
+  />
+
+  <h3 className="text-center text-sm font-semibold text-black px-2">
+    TECNOLOGIAS DE LA INFORMACION E INFRAESTRUCTURA TECNOLOGICA
+  </h3>
+
+  {/* CUADRO SIN LOGO */}
+  <div className="w-full rounded-lg bg-gradient-to-tr from-green-500 to-teal-500 p-6 text-white text-center">
+    <h2 className="text-xl font-bold">Comienza ahora</h2>
+    <p className="mt-2 text-sm opacity-90">
+      Regístrate para crear y gestionar tu bitácora personal.
+    </p>
+  </div>
+
+</div>
 
           <div className="w-full md:w-2/3">
             <h1 className="mb-2 text-2xl font-semibold">Crear cuenta</h1>

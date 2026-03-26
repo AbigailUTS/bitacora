@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { supabase } from "../lib/supabaseClient";
 
 function getErrorMessage(err: unknown): string {
@@ -45,11 +46,32 @@ export default function LoginPage() {
       style={{ backgroundImage: "url('/img/fondo.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundAttachment: 'fixed' }}
     >
       <main className="flex w-full max-w-4xl items-center justify-center gap-10 p-8">
-        <section className="hidden w-1/2 flex-col items-start gap-6 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 p-10 text-white shadow-lg md:flex">
-          <h2 className="text-3xl font-bold">Bitácora</h2>
-          <p className="max-w-sm text-sm opacity-90">Accede a tu cuenta para gestionar entradas y notas. Si no tienes cuenta, crea una en el registro.</p>
-          <div className="mt-auto text-xs opacity-85">Soporte: soporte@tudominio.com</div>
-        </section>
+        <section className="hidden w-1/2 flex-col items-center gap-6 md:flex">
+
+  {/* LOGO FUERA */}
+  <Image
+    src="/img/logopresidencia.jpg"
+    alt="Logo Presidencia"
+    width={160}
+    height={160}
+  />
+
+  <h3 className="text-center text-sm font-semibold text-black px-4">
+    TECNOLOGIAS DE LA INFORMACION E INFRAESTRUCTURA TECNOLOGICA
+  </h3>
+
+  {/* PANEL */}
+  <div className="w-70 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 p-10 text-white shadow-lg text-center">
+    <h2 className="text-3xl font-bold">Bitácora</h2>
+    <p className="mt-2 text-sm opacity-90">
+      Accede a tu cuenta para gestionar entradas y notas. Si no tienes cuenta, crea una en el registro.
+    </p>
+    <div className="mt-6 text-xs opacity-85">
+      Soporte: infraestructura@salamanca.gob.mx
+    </div>
+  </div>
+
+</section>
 
         <section className="w-full max-w-md rounded-xl bg-white p-8 shadow-md">
           <div className="mb-6 text-center">
