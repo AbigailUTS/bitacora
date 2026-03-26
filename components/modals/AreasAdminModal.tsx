@@ -29,11 +29,7 @@ export default function AreasAdminModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isOpen) {
-      loadAreas();
-    }
-  }, [isOpen, dependenciaId]);
+ 
 
   const loadAreas = async () => {
     setLoading(true);
@@ -47,6 +43,14 @@ export default function AreasAdminModal({
     }
     setLoading(false);
   };
+
+  useEffect(() => {
+    if (isOpen) {
+      (async () => {
+        await loadAreas();
+      })();
+    }
+  }, [isOpen, dependenciaId]);
 
   const handleAddArea = async () => {
     if (!inputValue.trim()) {

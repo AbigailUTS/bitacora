@@ -6,7 +6,7 @@ import {
   DependenciasItem,
 } from "../../lib/dependenciasService";
 import { supabase } from "../../lib/supabaseClient";
-import { fetchUserRole, createReporte } from "../../lib/reportesService";
+import { fetchUserRole, createReporte, fetchAreasByDependenciaForReportes, type AreaOption } from "../../lib/reportesService";
 import { ReporteInsert } from "../../lib/models/reporte";
 
 interface GenerarReporteProps {
@@ -18,6 +18,8 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
   const [saving, setSaving] = useState(false);
   const [dependencias, setDependencias] = useState<DependenciasItem[]>([]);
   const [loadingDeps, setLoadingDeps] = useState(false);
+  const [areas, setAreas] = useState<AreaOption[]>([]);
+  const [loadingAreas, setLoadingAreas] = useState(false);
   const [notification, setNotification] = useState<{
     type: "error" | "success" | "warning";
     message: string;
@@ -29,6 +31,7 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
   const [dependenciaId, setDependenciaId] = useState<string | undefined>(
     undefined,
   );
+  const [areaId, setAreaId] = useState<string | undefined>(undefined);
   const [asunto, setAsunto] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [evidencias, setEvidencias] = useState("");
@@ -55,6 +58,23 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
     }
     loadUser();
   }, []);
+
+  // Cargar áreas cuando cambia la dependencia
+  useEffect(() => {
+    if (dependenciaId) {
+      (async () => {
+        setLoadingAreas(true);
+        const { data, error } = await fetchAreasByDependenciaForReportes(dependenciaId);
+        if (!error) {
+          setAreas(data);
+        }
+        setLoadingAreas(false);
+      })();
+    } else {
+      setAreas([]);
+      setAreaId(undefined);
+    }
+  }, [dependenciaId]);
 
   useEffect(() => {
     if (notification) {
@@ -83,6 +103,10 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
       setNotification({ type: "error", message: "Dependencia requerida." });
       return;
     }
+    if (areaId === undefined) {
+      setNotification({ type: "error", message: "Área requerida." });
+      return;
+    }
 
     const dependenciaIdNum = parseInt(dependenciaId);
     if (isNaN(dependenciaIdNum)) {
@@ -90,12 +114,16 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
       return;
     }
 
+    // Si el área es "general", no enviar area_id
+    const areaIdNum = areaId && areaId !== 'general' ? parseInt(areaId) : null;
+
     const payload: ReporteInsert = {
       usuario_id: usuarioId,
       asunto: asunto.trim(),
       descripcion: descripcion.trim(),
       evidencias: evidencias?.trim() || undefined,
       dependencia_id: dependenciaIdNum,
+      area_id: areaIdNum,
       urgencia_reporte: urgenciaReporte,
       estatus_ticket: "pendiente",
     };
@@ -117,6 +145,7 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
     setDescripcion("");
     setEvidencias("");
     setDependenciaId(undefined);
+    setAreaId(undefined);
     setUrgenciaReporte("normal");
 
     if (onClose) onClose();
@@ -242,6 +271,29 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
                     dependencias.map((d) => (
                       <option key={d.id} value={d.id}>
                         {d.nombre}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-700 mb-1">
+                  Área
+                </label>
+                <select
+                  value={areaId || ""}
+                  onChange={(ev) => setAreaId(ev.target.value || undefined)}
+                  disabled={!dependenciaId || loadingAreas}
+                  className="w-full px-3 py-2 border rounded disabled:bg-gray-100"
+                >
+                  <option value="">Seleccionar...</option>
+                  {loadingAreas ? (
+                    <option>cargando...</option>
+                  ) : (
+                    areas.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.nombre}
                       </option>
                     ))
                   )}

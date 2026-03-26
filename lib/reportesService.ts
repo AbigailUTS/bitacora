@@ -1,6 +1,11 @@
 import { supabase } from './supabaseClient';
 import { ReporteInsert, Reporte } from './models/reporte';
 
+export interface AreaOption {
+  id: string;
+  nombre: string;
+}
+
 export async function fetchUserRole(userId: string): Promise<{ role: string | null; error: string | null }> {
   const { data, error } = await supabase
     .from('user_roles')
@@ -13,6 +18,30 @@ export async function fetchUserRole(userId: string): Promise<{ role: string | nu
   return { role: data?.role ?? null, error: null };
 }
 
+export async function fetchAreasByDependenciaForReportes(dependenciaId: string): Promise<{ data: AreaOption[]; error: string | null }> {
+  const { data, error } = await supabase
+    .from('areas')
+    .select('id,nombre')
+    .eq('id_dependencias', parseInt(dependenciaId))
+    .order('nombre', { ascending: true });
+
+  if (error) {
+    return { data: [], error: error.message };
+  }
+
+  // Si no hay áreas, retornar "General"
+  if (!data || data.length === 0) {
+    return { data: [{ id: 'general', nombre: 'General' }], error: null };
+  }
+
+  const areas: AreaOption[] = data.map((a: any) => ({
+    id: String(a.id),
+    nombre: a.nombre,
+  }));
+
+  return { data: areas, error: null };
+}
+
 export async function createReporte(reporte: ReporteInsert): Promise<{ data: ReporteInsert[] | null; error: string | null }> {
   console.log('createReporte called with:', reporte);
     const { data, error } = await supabase.from('reportes').insert([reporte]).select();
@@ -21,8 +50,16 @@ console.log('createReporte result:', { data, error });
   return { data, error: null };
 }
 
-export async function fetchReportes(userId: string, isAdmin: boolean): Promise<{ data: (Reporte & { user_name?: string })[] | null; error: string | null }> {
-  let reportesQuery = supabase.from('reportes').select('*');
+export async function fetchReportes(userId: string, isAdmin: boolean): Promise<{ data: (Reporte & { user_name?: string; dependencia_nombre?: string; area_nombre?: string })[] | null; error: string | null }> {
+  let reportesQuery = supabase.from('reportes').select(`
+    *,
+    dependencias:dependencia_id (
+      nombre
+    ),
+    areas:area_id (
+      nombre
+    )
+  `);
   if (!isAdmin) {
     reportesQuery = reportesQuery.eq('usuario_id', userId);
   }
@@ -42,6 +79,8 @@ export async function fetchReportes(userId: string, isAdmin: boolean): Promise<{
     const transformedData = reportesData.map(reporte => ({
       ...reporte,
       user_name: 'Desconocido',
+      dependencia_nombre: reporte.dependencias?.nombre || 'Sin dependencia',
+      area_nombre: reporte.areas?.nombre || 'General',
     }));
     return { data: transformedData, error: null };
   }
@@ -50,6 +89,8 @@ export async function fetchReportes(userId: string, isAdmin: boolean): Promise<{
   const transformedData = reportesData.map(reporte => ({
     ...reporte,
     user_name: userMap.get(reporte.usuario_id) || 'Desconocido',
+    dependencia_nombre: reporte.dependencias?.nombre || 'Sin dependencia',
+    area_nombre: reporte.areas?.nombre || 'General',
   }));
   return { data: transformedData, error: null };
 }
