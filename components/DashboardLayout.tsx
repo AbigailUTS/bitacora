@@ -7,6 +7,7 @@ import EstatusReportesPanel from "./panels/EstatusReportesPanel";
 import GraficasPanel from "./panels/GraficasPanel";
 import DependenciasPanel from "./panels/DependenciasPanel";
 import UbicacionPanel from "./panels/UbicacionPanel";
+import ClasificacionesPanel from "./panels/ClasificacionesPanel";
 import HoverCard from "./HoverCard";
 
 interface DashboardLayoutProps {
@@ -171,6 +172,28 @@ const menuLinks: MenuLink[] = [
       </svg>
     ),
   },
+  {
+    id: "clasificaciones",
+    label: "Clasificaciones",
+    color: "purple",
+    fullDescription: "Administra las clasificaciones disponibles para categorizar los reportes del sistema.",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-8 w-8"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+        />
+      </svg>
+    ),
+  },
 ];
 
 export default function DashboardLayout({
@@ -192,10 +215,10 @@ export default function DashboardLayout({
   // Pasar activePanel como prop al children solo si el child es un elemento React compuesto
   let childrenWithProps: React.ReactNode = children;
   if (React.isValidElement(children)) {
-    const childType = (children as any).type;
+    const childType = (children as React.ReactElement).type;
     const isDOMElement = typeof childType === "string"; // 'div', 'span', etc.
     if (!isDOMElement) {
-      childrenWithProps = React.cloneElement(children as React.ReactElement<any>, { activePanel });
+      childrenWithProps = React.cloneElement(children as React.ReactElement<{ activePanel?: string | null }>, { activePanel });
     }
   }
 
@@ -245,7 +268,7 @@ export default function DashboardLayout({
             <div className="flex flex-col h-full bg-white">
               {/* Header del panel expandido */}
               {activePanel && (
-                <div className="flex items-center justify-between border-b-2 border-gray-100 px-8 py-7 flex-shrink-0 bg-gradient-to-r from-gray-50 to-white shadow-sm">
+                <div className="flex items-center justify-between border-b-2 border-gray-100 px-8 py-7 shrink-0 bg-linear-to-r from-gray-50 to-white shadow-sm">
                   <div>
                     <h2 className="text-3xl font-bold text-gray-900">
                       {activePanel === "generar-reporte" && "Generar reporte"}
@@ -253,6 +276,7 @@ export default function DashboardLayout({
                       {activePanel === "graficas" && "Gráficas"}
                       {activePanel === "dependencias" && "Dependencias"}
                       {activePanel === "ubicacion" && "Ubicación"}
+                      {activePanel === "clasificaciones" && "Clasificaciones"}
                     </h2>
                     <p className="text-sm text-gray-500 mt-1">
                       {activePanel === "generar-reporte" && "Crea un nuevo reporte con los datos necesarios"}
@@ -260,11 +284,12 @@ export default function DashboardLayout({
                       {activePanel === "graficas" && "Visualiza métricas y análisis de datos"}
                       {activePanel === "dependencias" && "Administra tus sucursales y dependencias"}
                       {activePanel === "ubicacion" && "Gestiona las ubicaciones de tus puntos de operación"}
+                      {activePanel === "clasificaciones" && "Administra las clasificaciones de reportes"}
                     </p>
                   </div>
                   <button
                     onClick={closePanel}
-                    className="flex-shrink-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition rounded-lg p-2"
+                    className="shrink-0 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition rounded-lg p-2"
                     aria-label="Cerrar panel"
                   >
                     <svg
@@ -293,6 +318,7 @@ export default function DashboardLayout({
                 {activePanel === "graficas" && <GraficasPanel onClose={closePanel} />}
                 {activePanel === "dependencias" && <DependenciasPanel onClose={closePanel} />}
                 {activePanel === "ubicacion" && <UbicacionPanel onClose={closePanel} />}
+                {activePanel === "clasificaciones" && <ClasificacionesPanel onClose={closePanel} />}
               </div>
             </div>
           )}

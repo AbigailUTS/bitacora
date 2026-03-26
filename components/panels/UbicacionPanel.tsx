@@ -10,6 +10,7 @@ import {
 } from "../../lib/ubicacionesService";
 import UbicacionCard from "../UbicacionCard";
 import UbicacionAdminPanel from "./UbicacionAdminPanel";
+import ConfirmationModal from "../ConfirmationModal";
 
 interface UbicacionPanelProps {
   onClose: () => void;
@@ -22,6 +23,8 @@ export default function UbicacionPanel({ onClose }: UbicacionPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({ nombre: "", direccion: "", link: "" });
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [ubicacionToDelete, setUbicacionToDelete] = useState<UbicacionItem | null>(null);
 
   useEffect(() => {
     const loadUbicaciones = async () => {
@@ -54,18 +57,42 @@ export default function UbicacionPanel({ onClose }: UbicacionPanelProps) {
     }
   };
 
-  const handleRemoveUbicacion = async (id: string) => {
-    const { success, error: removeError } = await removeUbicacion(id);
+  const handleRemoveUbicacion = (ubicacion: UbicacionItem) => {
+    setUbicacionToDelete(ubicacion);
+    setDeleteModalOpen(true);
+  };
+
+  const confirmRemoveUbicacion = async () => {
+    if (!ubicacionToDelete) return;
+
+    const { success, error: removeError } = await removeUbicacion(ubicacionToDelete.id);
 
     if (removeError) {
       setError(removeError);
     } else if (success) {
-      setUbicaciones(ubicaciones.filter((ub) => ub.id !== id));
+      setUbicaciones(ubicaciones.filter((ub) => ub.id !== ubicacionToDelete.id));
     }
+
+    setDeleteModalOpen(false);
+    setUbicacionToDelete(null);
+  };
+
+  const cancelRemoveUbicacion = () => {
+    setDeleteModalOpen(false);
+    setUbicacionToDelete(null);
   };
 
   return (
     <div className="space-y-6">
+      {/* Modal de confirmación de eliminación */}
+      <ConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={cancelRemoveUbicacion}
+        onConfirm={confirmRemoveUbicacion}
+        title="Eliminar Ubicación"
+        message={`¿Estás seguro de que quieres eliminar la ubicación "${ubicacionToDelete?.nombre}"? Esta acción no se puede deshacer.`}
+      />
+
       {/* Panel de administración - Solo para admins */}
       {isAdmin && (
         <div className="space-y-6">
@@ -103,7 +130,7 @@ export default function UbicacionPanel({ onClose }: UbicacionPanelProps) {
               <UbicacionCard
                 key={ubicacion.id}
                 ubicacion={ubicacion}
-                onRemove={handleRemoveUbicacion}
+                onRemove={isAdmin ? handleRemoveUbicacion : undefined}
                 isAdmin={isAdmin}
               />
             ))}

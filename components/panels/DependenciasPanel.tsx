@@ -11,6 +11,7 @@ import {
 import DependenciaCard from "../DependenciaCard";
 import DependenciasAdminPanel from "./DependenciasAdminPanel";
 import AreasAdminModal from "../modals/AreasAdminModal";
+import ConfirmationModal from "../ConfirmationModal";
 
 interface DependenciasPanelProps {
   onClose: () => void;
@@ -25,6 +26,8 @@ export default function DependenciasPanel({ onClose }: DependenciasPanelProps) {
   const [selectedDependencia, setSelectedDependencia] =
     useState<DependenciasItem | null>(null);
   const [isAreasModalOpen, setIsAreasModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [dependenciaToDelete, setDependenciaToDelete] = useState<DependenciasItem | null>(null);
 
   useEffect(() => {
     const loadDependencias = async () => {
@@ -52,14 +55,29 @@ export default function DependenciasPanel({ onClose }: DependenciasPanelProps) {
     }
   };
 
-  const handleRemoveDependencia = async (id: string) => {
-    const { success, error: removeError } = await removeDependencia(id);
+  const handleRemoveDependencia = (dependencia: DependenciasItem) => {
+    setDependenciaToDelete(dependencia);
+    setDeleteModalOpen(true);
+  };
+
+  const confirmRemoveDependencia = async () => {
+    if (!dependenciaToDelete) return;
+
+    const { success, error: removeError } = await removeDependencia(dependenciaToDelete.id);
 
     if (removeError) {
       setError(removeError);
     } else if (success) {
-      setDependencias(dependencias.filter((dep) => dep.id !== id));
+      setDependencias(dependencias.filter((dep) => dep.id !== dependenciaToDelete.id));
     }
+
+    setDeleteModalOpen(false);
+    setDependenciaToDelete(null);
+  };
+
+  const cancelRemoveDependencia = () => {
+    setDeleteModalOpen(false);
+    setDependenciaToDelete(null);
   };
 
   const handleManageAreas = (dependencia: DependenciasItem) => {
@@ -89,6 +107,15 @@ export default function DependenciasPanel({ onClose }: DependenciasPanelProps) {
           dependenciaNombre={selectedDependencia?.nombre || ""}
         />
       )}
+
+      {/* Modal de confirmación de eliminación */}
+      <ConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={cancelRemoveDependencia}
+        onConfirm={confirmRemoveDependencia}
+        title="Eliminar Dependencia"
+        message={`¿Estás seguro de que quieres eliminar la dependencia "${dependenciaToDelete?.nombre}"? Esta acción también eliminará todas las áreas asociadas y no se puede deshacer.`}
+      />
 
       {/* Panel de administración - Solo para admins */}
       {isAdmin && (
@@ -122,7 +149,7 @@ export default function DependenciasPanel({ onClose }: DependenciasPanelProps) {
               <DependenciaCard
                 key={dependencia.id}
                 dependencia={dependencia}
-                onRemove={handleRemoveDependencia}
+                onRemove={isAdmin ? handleRemoveDependencia : undefined}
                 isAdmin={isAdmin}
                 onManageAreas={isAdmin ? handleManageAreas : undefined}
               />

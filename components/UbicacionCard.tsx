@@ -11,7 +11,7 @@ interface UbicacionItem {
 
 interface UbicacionCardProps {
   ubicacion: UbicacionItem;
-  onRemove: (id: string) => void;
+  onRemove?: (ubicacion: UbicacionItem) => void;
   isAdmin: boolean;
 }
 
@@ -33,7 +33,7 @@ export default function UbicacionCard({
         className="flex items-start justify-between"
       >
         <div className="flex gap-3 flex-1">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 text-green-600 flex-shrink-0 mt-1">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 text-green-600 shrink-0 mt-1">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-5 w-5"
@@ -76,9 +76,9 @@ export default function UbicacionCard({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onRemove(ubicacion.id);
+              onRemove?.(ubicacion);
             }}
-            className="opacity-0 group-hover:opacity-100 text-red-600 hover:text-red-800 transition p-1 flex-shrink-0"
+            className="opacity-0 group-hover:opacity-100 text-red-600 hover:text-red-800 transition p-1 shrink-0"
             title="Eliminar ubicación"
           >
             <svg

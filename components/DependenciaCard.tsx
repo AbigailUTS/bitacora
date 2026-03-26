@@ -9,7 +9,7 @@ interface DependenciaItem {
 
 interface DependenciaCardProps {
   dependencia: DependenciaItem;
-  onRemove: (id: string) => void;
+  onRemove?: (dependencia: DependenciaItem) => void;
   isAdmin: boolean;
   onManageAreas?: (dependencia: DependenciaItem) => void;
 }
@@ -50,7 +50,7 @@ export default function DependenciaCard({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onRemove(dependencia.id);
+            onRemove?.(dependencia);
           }}
           className="opacity-0 group-hover:opacity-100 text-red-600 hover:text-red-800 transition p-1"
           title="Eliminar dependencia"
