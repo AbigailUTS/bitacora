@@ -11,15 +11,22 @@ interface DependenciaCardProps {
   dependencia: DependenciaItem;
   onRemove: (id: string) => void;
   isAdmin: boolean;
+  onManageAreas?: (dependencia: DependenciaItem) => void;
 }
 
 export default function DependenciaCard({
   dependencia,
   onRemove,
   isAdmin,
+  onManageAreas,
 }: DependenciaCardProps) {
   return (
-    <li className="group flex items-center justify-between bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-blue-300 transition">
+    <li
+      className={`group flex items-center justify-between bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md hover:border-blue-300 transition ${
+        isAdmin ? "cursor-pointer" : ""
+      }`}
+      onClick={() => isAdmin && onManageAreas?.(dependencia)}
+    >
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
           <svg
@@ -41,7 +48,10 @@ export default function DependenciaCard({
       </div>
       {isAdmin && (
         <button
-          onClick={() => onRemove(dependencia.id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove(dependencia.id);
+          }}
           className="opacity-0 group-hover:opacity-100 text-red-600 hover:text-red-800 transition p-1"
           title="Eliminar dependencia"
         >

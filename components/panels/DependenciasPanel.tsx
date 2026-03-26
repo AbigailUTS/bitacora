@@ -10,6 +10,7 @@ import {
 } from "../../lib/dependenciasService";
 import DependenciaCard from "../DependenciaCard";
 import DependenciasAdminPanel from "./DependenciasAdminPanel";
+import AreasAdminModal from "../modals/AreasAdminModal";
 
 interface DependenciasPanelProps {
   onClose: () => void;
@@ -21,6 +22,9 @@ export default function DependenciasPanel({ onClose }: DependenciasPanelProps) {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState("");
+  const [selectedDependencia, setSelectedDependencia] =
+    useState<DependenciasItem | null>(null);
+  const [isAreasModalOpen, setIsAreasModalOpen] = useState(false);
 
   useEffect(() => {
     const loadDependencias = async () => {
@@ -58,6 +62,16 @@ export default function DependenciasPanel({ onClose }: DependenciasPanelProps) {
     }
   };
 
+  const handleManageAreas = (dependencia: DependenciasItem) => {
+    setSelectedDependencia(dependencia);
+    setIsAreasModalOpen(true);
+  };
+
+  const handleCloseAreasModal = () => {
+    setIsAreasModalOpen(false);
+    setSelectedDependencia(null);
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       handleAddDependencia();
@@ -66,6 +80,16 @@ export default function DependenciasPanel({ onClose }: DependenciasPanelProps) {
 
   return (
     <div className="space-y-6">
+      {/* Modal de áreas - Solo para admins */}
+      {isAdmin && (
+        <AreasAdminModal
+          isOpen={isAreasModalOpen}
+          onClose={handleCloseAreasModal}
+          dependenciaId={selectedDependencia?.id || ""}
+          dependenciaNombre={selectedDependencia?.nombre || ""}
+        />
+      )}
+
       {/* Panel de administración - Solo para admins */}
       {isAdmin && (
         <div className="space-y-6">
@@ -100,6 +124,7 @@ export default function DependenciasPanel({ onClose }: DependenciasPanelProps) {
                 dependencia={dependencia}
                 onRemove={handleRemoveDependencia}
                 isAdmin={isAdmin}
+                onManageAreas={isAdmin ? handleManageAreas : undefined}
               />
             ))}
           </ul>
