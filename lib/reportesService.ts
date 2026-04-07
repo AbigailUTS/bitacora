@@ -34,9 +34,9 @@ export async function fetchAreasByDependenciaForReportes(dependenciaId: string):
     return { data: [{ id: 'general', nombre: 'General' }], error: null };
   }
 
-  const areas: AreaOption[] = data.map((a: any) => ({
-    id: String(a.id),
-    nombre: a.nombre,
+  const areas: AreaOption[] = data.map(({ id, nombre }) => ({
+    id: String(id),
+    nombre,
   }));
 
   return { data: areas, error: null };
@@ -104,4 +104,64 @@ export async function updateReporte(id: number, updates: Partial<Reporte>): Prom
   const { error } = await supabase.from('reportes').update(updates).eq('id', id);
   if (error) return { error: error.message };
   return { error: null };
+}
+
+export async function fetchReportesGraficas(
+  dependenciaIds: string[] | null,
+  startDate: string | null,
+  endDate: string | null,
+  period: 'dia' | 'semana' | 'mes' | 'ano'
+): Promise<{ data: { fecha: string; cantidad: number }[] | null; error: string | null }> {
+  let query = supabase.from('reportes').select('created_at, dependencia_id');
+
+  if (dependenciaIds && dependenciaIds.length > 0) {
+    query = query.in('dependencia_id', dependenciaIds.map(id => parseInt(id)));
+  }
+
+  if (startDate) {
+    query = query.gte('created_at', startDate);
+  }
+
+  if (endDate) {
+    query = query.lte('created_at', endDate);
+  }
+
+  const { data, error } = await query;
+  if (error) return { data: null, error: error.message };
+
+  if (!data || data.length === 0) return { data: [], error: null };
+
+  // Agrupar por período
+  const grouped = data.reduce((acc: { [key: string]: number }, reporte) => {
+    const date = new Date(reporte.created_at);
+    let key: string;
+
+    switch (period) {
+      case 'dia':
+        key = date.toISOString().split('T')[0]; // YYYY-MM-DD
+        break;
+      case 'semana':
+        const startOfWeek = new Date(date);
+        startOfWeek.setDate(date.getDate() - date.getDay());
+        key = startOfWeek.toISOString().split('T')[0];
+        break;
+      case 'mes':
+        key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        break;
+      case 'ano':
+        key = String(date.getFullYear());
+        break;
+      default:
+        key = date.toISOString().split('T')[0];
+    }
+
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+
+  const result = Object.entries(grouped)
+    .map(([fecha, cantidad]) => ({ fecha, cantidad }))
+    .sort((a, b) => a.fecha.localeCompare(b.fecha));
+
+  return { data: result, error: null };
 }

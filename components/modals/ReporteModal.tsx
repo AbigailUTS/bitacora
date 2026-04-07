@@ -49,6 +49,7 @@ export default function ReporteModal({ isOpen, onClose, reporte, isAdmin = false
   // Actualizar estados cuando el reporte cambie
   useEffect(() => {
     if (reporte) {
+      // eslint-disable-next-line
       setDependenciaId(reporte.dependencia_id.toString());
       setAreaId(reporte.area_id?.toString());
       setClasificacionId(reporte.clasificacion_id?.toString());
@@ -112,12 +113,8 @@ export default function ReporteModal({ isOpen, onClose, reporte, isAdmin = false
         }
         setLoadingAreas(false);
       })();
-    }
-  }, [dependenciaId]);
-
-  // Resetear áreas cuando no hay dependencia
-  useEffect(() => {
-    if (!dependenciaId) {
+    } else {
+      // eslint-disable-next-line
       setAreas([]);
       setAreaId(undefined);
     }
