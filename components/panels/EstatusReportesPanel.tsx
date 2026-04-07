@@ -127,7 +127,12 @@ export default function EstatusReportesPanel({
     filteredReportes = filteredReportes.filter(r => r.estatus_ticket === estatusFilter);
   }
   if (isAdmin && search) {
-    filteredReportes = filteredReportes.filter(r => r.user_name?.toLowerCase().includes(search.toLowerCase()));
+    const term = search.toLowerCase();
+    filteredReportes = filteredReportes.filter(
+      (r) =>
+        r.user_name?.toLowerCase().includes(term) ||
+        r.clasificacion_nombre?.toLowerCase().includes(term),
+    );
   }
 
   if (loading || adminLoading) {
@@ -153,7 +158,7 @@ export default function EstatusReportesPanel({
         <div>
           <input
             type="text"
-            placeholder="Buscar por usuario"
+            placeholder="Buscar por usuario o clasificación"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="border border-gray-300 rounded px-3 py-2 w-full mb-4"
@@ -200,7 +205,7 @@ export default function EstatusReportesPanel({
               }}
             >
               <div className="flex items-start justify-between mb-2">
-                <h4 className="font-medium text-gray-900">{reporte.asunto}</h4>
+                <h4 className="font-medium text-gray-900">{reporte.clasificacion_nombre}</h4>
                 <div className="flex space-x-2">
                   <span
                     className={`text-xs font-semibold px-2 py-1 rounded ${getUrgenciaColor(
@@ -237,7 +242,7 @@ export default function EstatusReportesPanel({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg max-w-md w-full">
             <h4 className="font-medium text-gray-900 mb-4">Modificar estado del reporte</h4>
-            <p className="text-sm text-gray-600 mb-2"><strong>Asunto:</strong> {selectedReporte.asunto}</p>
+            <p className="text-sm text-gray-600 mb-2"><strong>Clasificación:</strong> {selectedReporte.clasificacion_nombre}</p>
             <p className="text-sm text-gray-600 mb-2"><strong>Dependencia:</strong> {selectedReporte.dependencia_nombre}</p>
             <p className="text-sm text-gray-600 mb-2"><strong>Área:</strong> {selectedReporte.area_nombre}</p>
             <p className="text-sm text-gray-600 mb-4"><strong>Clasificación:</strong> {selectedReporte.clasificacion_nombre}</p>

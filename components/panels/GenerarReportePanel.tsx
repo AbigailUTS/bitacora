@@ -36,7 +36,6 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
   );
   const [areaId, setAreaId] = useState<string | undefined>(undefined);
   const [clasificacionId, setClasificacionId] = useState<string | undefined>(undefined);
-  const [asunto, setAsunto] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [evidencias, setEvidencias] = useState("");
   const [urgenciaReporte, setUrgenciaReporte] =
@@ -105,10 +104,6 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
       setNotification({ type: "error", message: "No se detectó usuario." });
       return;
     }
-    if (!asunto.trim()) {
-      setNotification({ type: "error", message: "Asunto requerido." });
-      return;
-    }
     if (!descripcion.trim()) {
       setNotification({ type: "error", message: "Descripción requerida." });
       return;
@@ -135,10 +130,12 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
     // Si el área es "general", no enviar area_id
     const areaIdNum = areaId && areaId !== 'general' ? parseInt(areaId) : null;
     const clasificacionIdNum = parseInt(clasificacionId);
+    const selectedClasificacion = clasificaciones.find((c) => c.id === String(clasificacionIdNum));
+    const asuntoValue = selectedClasificacion?.nombre || "";
 
     const payload: ReporteInsert = {
       usuario_id: usuarioId,
-      asunto: asunto.trim(),
+      asunto: asuntoValue,
       descripcion: descripcion.trim(),
       evidencias: evidencias?.trim() || undefined,
       dependencia_id: dependenciaIdNum,
@@ -161,7 +158,6 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
 
     setShowModal(false);
     // limpiar formulario
-    setAsunto("");
     setDescripcion("");
     setEvidencias("");
     setDependenciaId(undefined);
@@ -341,18 +337,6 @@ export default function GenerarReportePanel({ onClose }: GenerarReporteProps) {
                     ))
                   )}
                 </select>
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-700 mb-1">
-                  Asunto
-                </label>
-                <textarea
-                  value={asunto}
-                  onChange={(e) => setAsunto(e.target.value)}
-                  rows={2}
-                  className="w-full px-3 py-2 border rounded"
-                />
               </div>
 
               <div>

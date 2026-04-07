@@ -70,7 +70,12 @@ export default function HistorialReportesPanel({ onClose }: HistorialReportesPro
 
   let filteredReportes = sortedReportes;
   if (isAdmin && search) {
-    filteredReportes = filteredReportes.filter(r => r.user_name?.toLowerCase().includes(search.toLowerCase()));
+    const term = search.toLowerCase();
+    filteredReportes = filteredReportes.filter(
+      (r) =>
+        r.user_name?.toLowerCase().includes(term) ||
+        r.clasificacion_nombre?.toLowerCase().includes(term),
+    );
   }
 
   if (loading || adminLoading) {
@@ -95,7 +100,7 @@ export default function HistorialReportesPanel({ onClose }: HistorialReportesPro
         <div>
           <input
             type="text"
-            placeholder="Buscar por usuario"
+            placeholder="Buscar por usuario o clasificación"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="border border-gray-300 rounded px-3 py-2 w-full mb-4"
@@ -124,7 +129,7 @@ export default function HistorialReportesPanel({ onClose }: HistorialReportesPro
               className={`border border-gray-200 rounded-lg p-4 hover:shadow-md transition`}
             >
               <div className="flex items-start justify-between mb-2">
-                <h4 className="font-medium text-gray-900">{reporte.asunto}</h4>
+                <h4 className="font-medium text-gray-900">{reporte.clasificacion_nombre}</h4>
                 <span
                   className={`text-xs font-semibold px-2 py-1 rounded ${getUrgenciaColor(
                     reporte.urgencia_reporte
