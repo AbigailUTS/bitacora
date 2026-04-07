@@ -10,8 +10,6 @@ interface HistorialReportesProps {
   onClose: () => void;
 }
 
-const DIAS_HISTORIAL = 90; // Cambia este valor para modificar el rango de días
-
 export default function HistorialReportesPanel({ onClose }: HistorialReportesProps) {
   const { isAdmin, loading: adminLoading } = useIsAdmin();
   const [reportes, setReportes] = useState<(Reporte & { user_name?: string; dependencia_nombre?: string; area_nombre?: string; clasificacion_nombre?: string })[]>([]);
@@ -34,12 +32,8 @@ export default function HistorialReportesPanel({ onClose }: HistorialReportesPro
       if (error) {
         setError(error);
       } else {
-        let filtrados = (data || []).filter(r => r.estatus_ticket === "finalizado");
-        if (!isAdmin) {
-          const limite = new Date();
-          limite.setDate(limite.getDate() - DIAS_HISTORIAL);
-          filtrados = filtrados.filter(r => new Date(r.created_at) >= limite);
-        }
+        const filtrados = (data || []).filter(r => r.estatus_ticket === "finalizado");
+      
         setReportes(filtrados);
       }
       setLoading(false);

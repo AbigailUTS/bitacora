@@ -23,7 +23,6 @@ export default function EstatusReportesPanel({
   const [selectedReporte, setSelectedReporte] = useState<(Reporte & { user_name?: string; dependencia_nombre?: string; area_nombre?: string; clasificacion_nombre?: string }) | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [newStatus, setNewStatus] = useState('');
-  const DIAS_LIMITE_FINALIZADO = 7; // Cambia este valor para modificar el rango de días
 
   const updateStatus = async () => {
     if (!selectedReporte) return;
@@ -116,12 +115,10 @@ export default function EstatusReportesPanel({
 
   let filteredReportes = sortedReportes;
   if (!isAdmin) {
-    // Si no es admin, ocultar reportes finalizados más antiguos de DIAS_LIMITE_FINALIZADO
-    const limite = new Date();
-    limite.setDate(limite.getDate() - DIAS_LIMITE_FINALIZADO);
+    // Si no es admin, ocultar reportes finalizados
     filteredReportes = filteredReportes.filter(r => {
       if (r.estatus_ticket === "finalizado") {
-        return new Date(r.created_at) >= limite;
+        return false;
       }
       return true;
     });
