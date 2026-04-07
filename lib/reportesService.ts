@@ -99,3 +99,9 @@ export async function fetchReportes(userId: string, isAdmin: boolean): Promise<{
   }));
   return { data: transformedData, error: null };
 }
+
+export async function updateReporte(id: number, updates: Partial<Reporte>): Promise<{ error: string | null }> {
+  const { error } = await supabase.from('reportes').update(updates).eq('id', id);
+  if (error) return { error: error.message };
+  return { error: null };
+}

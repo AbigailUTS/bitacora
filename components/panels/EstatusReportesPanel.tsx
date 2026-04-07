@@ -5,6 +5,7 @@ import { supabase } from "../../lib/supabaseClient";
 import { useIsAdmin } from "../../lib/useIsAdmin";
 import { fetchReportes } from "../../lib/reportesService";
 import { Reporte } from "../../lib/models/reporte";
+import ReporteModal from "../modals/ReporteModal";
 
 interface EstatusReportesProps {
   onClose: () => void;
@@ -22,35 +23,6 @@ export default function EstatusReportesPanel({
   const [search, setSearch] = useState('');
   const [selectedReporte, setSelectedReporte] = useState<(Reporte & { user_name?: string; dependencia_nombre?: string; area_nombre?: string; clasificacion_nombre?: string }) | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [newStatus, setNewStatus] = useState('');
-
-  const updateStatus = async () => {
-    if (!selectedReporte) return;
-    const { error } = await supabase.from('reportes').update({ estatus_ticket: newStatus, updated_at: new Date() }).eq('id', selectedReporte.id);
-    if (error) {
-      setError('Error al actualizar el estado del reporte');
-    } else {
-      // recargar reportes
-      setLoading(true);
-      setError(null);
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        setError("Usuario no autenticado");
-        setLoading(false);
-        return;
-      }
-      const { data, error } = await fetchReportes(user.id, isAdmin);
-      if (error) {
-        setError(error);
-      } else {
-        setReportes(data || []);
-      }
-      setLoading(false);
-      setShowModal(false);
-      setSelectedReporte(null);
-      setNewStatus('');
-    }
-  };
 
   useEffect(() => {
     const load = async () => {
@@ -130,6 +102,7 @@ export default function EstatusReportesPanel({
     const term = search.toLowerCase();
     filteredReportes = filteredReportes.filter(
       (r) =>
+        String(r.id).includes(term) ||
         r.user_name?.toLowerCase().includes(term) ||
         r.clasificacion_nombre?.toLowerCase().includes(term),
     );
@@ -158,7 +131,7 @@ export default function EstatusReportesPanel({
         <div>
           <input
             type="text"
-            placeholder="Buscar por usuario o clasificación"
+            placeholder="Buscar por id, usuario o clasificación"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="border border-gray-300 rounded px-3 py-2 w-full mb-4"
@@ -195,15 +168,17 @@ export default function EstatusReportesPanel({
           filteredReportes.map((reporte) => (
             <div
               key={reporte.id}
-              className={`border border-gray-200 rounded-lg p-4 hover:shadow-md transition ${isAdmin ? 'cursor-pointer' : ''}`}
+              className={`relative border border-gray-200 rounded-lg p-4 pt-8 hover:shadow-md transition ${isAdmin ? 'cursor-pointer' : ''}`}
               onClick={() => {
                 if (isAdmin) {
                   setSelectedReporte(reporte);
                   setShowModal(true);
-                  setNewStatus(reporte.estatus_ticket);
                 }
               }}
             >
+              <span className="absolute top-3 right-3 text-xs font-semibold text-gray-500">
+                ID #{reporte.id}
+              </span>
               <div className="flex items-start justify-between mb-2">
                 <h4 className="font-medium text-gray-900">{reporte.clasificacion_nombre}</h4>
                 <div className="flex space-x-2">
@@ -238,30 +213,38 @@ export default function EstatusReportesPanel({
         )}
       </div>
 
-      {showModal && selectedReporte && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full">
-            <h4 className="font-medium text-gray-900 mb-4">Modificar estado del reporte</h4>
-            <p className="text-sm text-gray-600 mb-2"><strong>Clasificación:</strong> {selectedReporte.clasificacion_nombre}</p>
-            <p className="text-sm text-gray-600 mb-2"><strong>Dependencia:</strong> {selectedReporte.dependencia_nombre}</p>
-            <p className="text-sm text-gray-600 mb-2"><strong>Área:</strong> {selectedReporte.area_nombre}</p>
-            <p className="text-sm text-gray-600 mb-4"><strong>Clasificación:</strong> {selectedReporte.clasificacion_nombre}</p>
-            <select
-              value={newStatus}
-              onChange={(e) => setNewStatus(e.target.value)}
-              className="border border-gray-300 rounded px-3 py-2 w-full mb-4"
-            >
-              <option value="pendiente">Pendiente</option>
-              <option value="en progreso">En progreso</option>
-              <option value="finalizado">Finalizado</option>
-            </select>
-            <div className="flex space-x-2">
-              <button onClick={updateStatus} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Actualizar</button>
-              <button onClick={() => setShowModal(false)} className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Cancelar</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ReporteModal
+        isOpen={showModal}
+        onClose={() => {
+          setShowModal(false);
+          setSelectedReporte(null);
+        }}
+        reporte={selectedReporte}
+        isAdmin={isAdmin}
+        onSuccess={() => {
+          // Recargar reportes
+          setLoading(true);
+          setError(null);
+          const load = async () => {
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+            if (authError || !user) {
+              setError("Usuario no autenticado");
+              setLoading(false);
+              return;
+            }
+            const { data, error } = await fetchReportes(user.id, isAdmin);
+            if (error) {
+              setError(error);
+            } else {
+              setReportes(data || []);
+            }
+            setLoading(false);
+          };
+          load();
+          setShowModal(false);
+          setSelectedReporte(null);
+        }}
+      />
 
       <button
         onClick={onClose}

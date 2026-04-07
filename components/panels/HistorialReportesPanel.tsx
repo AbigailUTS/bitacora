@@ -73,6 +73,7 @@ export default function HistorialReportesPanel({ onClose }: HistorialReportesPro
     const term = search.toLowerCase();
     filteredReportes = filteredReportes.filter(
       (r) =>
+        String(r.id).includes(term) ||
         r.user_name?.toLowerCase().includes(term) ||
         r.clasificacion_nombre?.toLowerCase().includes(term),
     );
@@ -100,7 +101,7 @@ export default function HistorialReportesPanel({ onClose }: HistorialReportesPro
         <div>
           <input
             type="text"
-            placeholder="Buscar por usuario o clasificación"
+            placeholder="Buscar por id, usuario o clasificación"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="border border-gray-300 rounded px-3 py-2 w-full mb-4"
@@ -126,8 +127,11 @@ export default function HistorialReportesPanel({ onClose }: HistorialReportesPro
           filteredReportes.map((reporte) => (
             <div
               key={reporte.id}
-              className={`border border-gray-200 rounded-lg p-4 hover:shadow-md transition`}
+              className={`relative border border-gray-200 rounded-lg p-4 pt-8 hover:shadow-md transition`}
             >
+              <span className="absolute top-3 right-3 text-xs font-semibold text-gray-500">
+                ID #{reporte.id}
+              </span>
               <div className="flex items-start justify-between mb-2">
                 <h4 className="font-medium text-gray-900">{reporte.clasificacion_nombre}</h4>
                 <span

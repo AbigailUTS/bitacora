@@ -10,6 +10,8 @@ export interface Reporte {
   clasificacion_id?: number | null; // referencia a tabla clasificacion, bigint nullable
   urgencia_reporte: string; // 'no urgente' | 'normal' | 'urgente' | 'muy urgente'
   estatus_ticket: string; // 'pendiente' | 'en progreso' | 'finalizado'
+  updated_at?: string | null; // timestamp - actualizada cuando se modifica
+  solucion?: string | null; // texto de la solución
   // rol se obtiene de otra tabla mediante join
 }
 
