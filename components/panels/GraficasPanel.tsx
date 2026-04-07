@@ -103,9 +103,9 @@ export default function GraficasPanel({ onClose }: GraficasPanelProps) {
       </div>
 
       {/* Filtros */}
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             Dependencias
           </label>
           <Select
@@ -119,8 +119,8 @@ export default function GraficasPanel({ onClose }: GraficasPanelProps) {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             Vista por
           </label>
           <select
@@ -135,50 +135,48 @@ export default function GraficasPanel({ onClose }: GraficasPanelProps) {
           </select>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             Rango de fechas
           </label>
-          <div className="space-y-2">
-            <label className="flex items-center">
+          <div className="grid gap-3">
+            <div className="flex items-center gap-2">
               <input
                 type="radio"
                 name="dateRange"
                 checked={!useDateRange}
                 onChange={() => setUseDateRange(false)}
-                className="mr-2"
+                className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
               />
-              Siempre
-            </label>
-            <label className="flex items-center">
+              <span className="text-sm text-gray-700">Siempre</span>
+            </div>
+            <div className="flex items-center gap-2">
               <input
                 type="radio"
                 name="dateRange"
                 checked={useDateRange}
                 onChange={() => setUseDateRange(true)}
-                className="mr-2"
+                className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
               />
-              Rango personalizado
-            </label>
-          </div>
-          {useDateRange && (
-            <div className="flex space-x-2 mt-2">
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="p-2 border border-gray-300 rounded-md"
-                placeholder="Fecha inicio"
-              />
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="p-2 border border-gray-300 rounded-md"
-                placeholder="Fecha fin"
-              />
+              <span className="text-sm text-gray-700">Rango personalizado</span>
             </div>
-          )}
+            {useDateRange && (
+              <div className="grid gap-2 sm:grid-cols-2">
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="p-2 border border-gray-300 rounded-md"
+                />
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="p-2 border border-gray-300 rounded-md"
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
