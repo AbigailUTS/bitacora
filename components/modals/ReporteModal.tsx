@@ -277,7 +277,7 @@ export default function ReporteModal({ isOpen, onClose, reporte, isAdmin = false
         </div>
       )}
 
-      <div className="relative bg-white w-full max-w-2xl mx-4 rounded-lg p-6 max-h-screen overflow-y-auto">
+      <div className="relative bg-white w-full max-w-2xl mx-4 rounded-lg p-4 md:p-6 max-h-screen overflow-y-auto">
         {isEditing && reporte && (
           <span className="absolute top-4 right-4 text-xs font-semibold text-gray-500">
             ID #{reporte.id}
@@ -285,7 +285,7 @@ export default function ReporteModal({ isOpen, onClose, reporte, isAdmin = false
         )}
         <h4 className="text-lg font-semibold mb-3">{isEditing ? "Editar reporte" : "Nuevo reporte"}</h4>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm text-gray-700 mb-1">
                 Fecha
@@ -466,7 +466,7 @@ export default function ReporteModal({ isOpen, onClose, reporte, isAdmin = false
             </div>
           )}
 
-          <div className="flex gap-3 justify-end pt-3">
+          <div className="flex flex-col sm:flex-row gap-3 justify-end pt-3">
             <button
               type="button"
               onClick={onClose}

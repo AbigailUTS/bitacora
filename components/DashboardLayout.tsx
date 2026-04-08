@@ -204,6 +204,7 @@ export default function DashboardLayout({
 }: DashboardLayoutProps) {
   const [activePanel, setActivePanel] = useState<string | null>(null);
   const [hoveredLink, setHoveredLink] = useState<string | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const closePanel = () => setActivePanel(null);
 
@@ -223,29 +224,64 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex flex-col md:flex-row h-screen bg-gray-50">
       {/* Sidebar */}
       <Sidebar
         links={menuLinks}
         userEmail={userEmail}
         onLogout={onLogout}
-        onLinkClick={(id) => setActivePanel(id)}
+        onLinkClick={(id) => {
+          setActivePanel(id);
+          setIsMobileMenuOpen(false); // Cerrar menú móvil al seleccionar
+        }}
         onLinkHover={setHoveredLink}
         activePanel={activePanel}
         hoveredLink={hoveredLink}
+        isMobileMenuOpen={isMobileMenuOpen}
+        onCloseMobileMenu={() => setIsMobileMenuOpen(false)}
       />
 
       {/* Contenido principal */}
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar con bienvenida - solo se muestra si no hay panel activo */}
         {!activePanel && (
-          <div className="bg-white border-b border-gray-200 px-8 py-6 shadow-sm">
-            <h1 className="text-2xl font-semibold text-gray-900">
-              Bienvenido{userName ? `, ${userName}` : ""}
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Gestiona tus reportes y visualiza tus datos
-            </p>
+          <div className="bg-white border-b border-gray-200 px-4 md:px-8 py-6 shadow-sm">
+            {/* Botón hamburguesa para móvil */}
+            <div className="flex items-center justify-between md:hidden">
+              <button
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+                aria-label="Abrir menú"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+              </button>
+              <h1 className="text-xl font-semibold text-gray-900">
+                Bitácora
+              </h1>
+              <div className="w-10"></div> {/* Espacio para centrar */}
+            </div>
+            {/* Contenido para desktop */}
+            <div className="hidden md:block">
+              <h1 className="text-2xl font-semibold text-gray-900">
+                Bienvenido{userName ? `, ${userName}` : ""}
+              </h1>
+              <p className="text-sm text-gray-500 mt-1">
+                Gestiona tus reportes y visualiza tus datos
+              </p>
+            </div>
           </div>
         )}
 
@@ -253,7 +289,7 @@ export default function DashboardLayout({
         <div className="flex-1 overflow-auto">
           {/* Si no hay panel activo, mostrar el contenido normal */}
           {!activePanel ? (
-            <div className="p-8">
+            <div className="p-4 md:p-8">
               {/* Mostrar tarjeta de hover en el centro o contenido normal */}
               {hoveredLink ? (
                 <div className="h-full flex items-center justify-center">
@@ -268,9 +304,9 @@ export default function DashboardLayout({
             <div className="flex flex-col h-full bg-white">
               {/* Header del panel expandido */}
               {activePanel && (
-                <div className="flex items-center justify-between border-b-2 border-gray-100 px-8 py-7 shrink-0 bg-linear-to-r from-gray-50 to-white shadow-sm">
+                <div className="flex items-center justify-between border-b-2 border-gray-100 px-4 md:px-8 py-7 shrink-0 bg-linear-to-r from-gray-50 to-white shadow-sm">
                   <div>
-                    <h2 className="text-3xl font-bold text-gray-900">
+                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
                       {activePanel === "generar-reporte" && "Generar reporte"}
                       {activePanel === "estatus-de-reportes" && "Estatus de reportes"}
                       {activePanel === "graficas" && "Gráficas"}
@@ -311,7 +347,7 @@ export default function DashboardLayout({
               )}
               
               {/* Contenido del panel */}
-              <div className="flex-1 overflow-auto animate-in fade-in duration-300 px-8 py-8">
+              <div className="flex-1 overflow-auto animate-in fade-in duration-300 px-4 md:px-8 py-8">
                 {activePanel === "generar-reporte" && <GenerarReportePanel onClose={closePanel} />}
                 {activePanel === "estatus-de-reportes" && <EstatusReportesPanel onClose={closePanel} />}
                 {activePanel === "historial-reportes" && <HistorialReportesPanel onClose={closePanel} />}

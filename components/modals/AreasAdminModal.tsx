@@ -139,7 +139,7 @@ export default function AreasAdminModal({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200 p-6">
+        <div className="flex items-center justify-between border-b border-gray-200 p-4 md:p-6">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">
               Gestionar Áreas
@@ -157,7 +157,7 @@ export default function AreasAdminModal({
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto flex-1 p-6">
+        <div className="overflow-y-auto flex-1 p-4 md:p-6">
           {/* Error message */}
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
@@ -266,7 +266,7 @@ export default function AreasAdminModal({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 p-6 flex justify-end gap-2">
+        <div className="border-t border-gray-200 p-4 md:p-6 flex justify-end gap-2">
           <button
             onClick={onClose}
             className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
