@@ -6,6 +6,8 @@ import { useIsAdmin } from "../../lib/useIsAdmin";
 import { fetchReportes } from "../../lib/reportesService";
 import { Reporte } from "../../lib/models/reporte";
 import ReporteModal from "../modals/ReporteModal";
+import PrintReportesModal from "../modals/PrintReportesModal";
+import ReporteCard from "../ReporteCard";
 
 interface EstatusReportesProps {
   onClose: () => void;
@@ -23,6 +25,7 @@ export default function EstatusReportesPanel({
   const [search, setSearch] = useState('');
   const [selectedReporte, setSelectedReporte] = useState<(Reporte & { user_name?: string; dependencia_nombre?: string; area_nombre?: string; clasificacion_nombre?: string }) | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showPrintModal, setShowPrintModal] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -118,13 +121,21 @@ export default function EstatusReportesPanel({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-          Estado de reportes
-        </h3>
-        <p className="text-gray-600">
-          Revisa el estado actual de {isAdmin ? "todos los" : "tus"} reportes.
-        </p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Estado de reportes
+          </h3>
+          <p className="text-gray-600">
+            Revisa el estado actual de {isAdmin ? "todos los" : "tus"} reportes.
+          </p>
+        </div>
+        <button
+          onClick={() => setShowPrintModal(true)}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium flex items-center gap-2"
+        >
+          🖨️ Imprimir
+        </button>
       </div>
 
       {isAdmin && (
@@ -166,49 +177,17 @@ export default function EstatusReportesPanel({
           <p className="text-gray-500">No hay reportes disponibles.</p>
         ) : (
           filteredReportes.map((reporte) => (
-            <div
+            <ReporteCard
               key={reporte.id}
-              className={`relative border border-gray-200 rounded-lg p-4 pt-8 hover:shadow-md transition ${isAdmin ? 'cursor-pointer' : ''}`}
-              onClick={() => {
-                if (isAdmin) {
-                  setSelectedReporte(reporte);
-                  setShowModal(true);
-                }
+              reporte={reporte}
+              isAdmin={isAdmin}
+              onSelect={() => {
+                setSelectedReporte(reporte);
+                setShowModal(true);
               }}
-            >
-              <span className="absolute top-3 right-3 text-xs font-semibold text-gray-500">
-                ID #{reporte.id}
-              </span>
-              <div className="flex items-start justify-between mb-2">
-                <h4 className="font-medium text-gray-900">{reporte.clasificacion_nombre}</h4>
-                <div className="flex space-x-2">
-                  <span
-                    className={`text-xs font-semibold px-2 py-1 rounded ${getUrgenciaColor(
-                      reporte.urgencia_reporte
-                    )}`}
-                  >
-                    {reporte.urgencia_reporte}
-                  </span>
-                  <span
-                    className={`text-xs font-semibold px-2 py-1 rounded ${getEstatusColor(
-                      reporte.estatus_ticket
-                    )}`}
-                  >
-                    {reporte.estatus_ticket}
-                  </span>
-                </div>
-              </div>
-              <p className="text-sm text-gray-600 mb-2">{reporte.descripcion}</p>
-              <div className="text-sm text-gray-500 space-y-1">
-                <p>Creado: {new Date(reporte.created_at).toLocaleDateString()}</p>
-                <p>Dependencia: {reporte.dependencia_nombre}</p>
-                <p>Área: {reporte.area_nombre}</p>
-                <p>Clasificación: {reporte.clasificacion_nombre}</p>
-                {isAdmin && reporte.user_name && (
-                  <p>Creado por: {reporte.user_name}</p>
-                )}
-              </div>
-            </div>
+              getUrgenciaColor={getUrgenciaColor}
+              getEstatusColor={getEstatusColor}
+            />
           ))
         )}
       </div>
@@ -244,6 +223,14 @@ export default function EstatusReportesPanel({
           setShowModal(false);
           setSelectedReporte(null);
         }}
+      />
+
+      <PrintReportesModal
+        isOpen={showPrintModal}
+        onClose={() => setShowPrintModal(false)}
+        reportes={reportes}
+        getUrgenciaColor={getUrgenciaColor}
+        getEstatusColor={getEstatusColor}
       />
 
       <button
