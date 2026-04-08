@@ -401,7 +401,7 @@ export default function ReporteModal({ isOpen, onClose, reporte, isAdmin = false
             />
           </div>
 
-          <div>
+          {/* <div>
             <label className="block text-sm text-gray-700 mb-1">
               Evidencias (URL)
             </label>
@@ -412,7 +412,7 @@ export default function ReporteModal({ isOpen, onClose, reporte, isAdmin = false
               placeholder="https://..."
               className="w-full px-3 py-2 border rounded disabled:bg-gray-100"
             />
-          </div>
+          </div> */}
 
           <div>
             <label className="block text-sm text-gray-700 mb-1">
