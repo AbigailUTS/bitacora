@@ -43,7 +43,7 @@ export default function PrintReportesModal({
   // Initialize selectedDependencias on mount
   useEffect(() => {
     if (isOpen && selectedDependencias.length === 0 && uniqueDependencias.length > 0) {
-      setSelectedDependencias(uniqueDependencias);
+      setSelectedDependencias(uniqueDependencias.filter(Boolean) as string[]);
     }
   }, [isOpen, uniqueDependencias, selectedDependencias.length]);
 
@@ -57,7 +57,7 @@ export default function PrintReportesModal({
 
     // Filter by dependencia
     if (selectedDependencias.length > 0) {
-      filtered = filtered.filter((r) => selectedDependencias.includes(r.dependencia_nombre));
+      filtered = filtered.filter((r) => r.dependencia_nombre && selectedDependencias.includes(r.dependencia_nombre));
     }
 
     // Filter by date range
@@ -150,7 +150,7 @@ export default function PrintReportesModal({
         },
         didDrawPage: (data) => {
           // Footer
-          const pageCount = (pdf as any).internal.getNumberOfPages();
+          const pageCount = pdf.internal.pages.length - 1;
           const pageSize = pdf.internal.pageSize;
           const pageHeight = pageSize.getHeight();
           const pageWidth = pageSize.getWidth();
@@ -250,7 +250,9 @@ export default function PrintReportesModal({
                   Dependencias
                 </label>
                 <div className="max-h-32 overflow-y-auto space-y-2">
-                  {uniqueDependencias.map((dependencia) => (
+                  {uniqueDependencias
+                    .filter((d): d is string => d !== undefined && d !== null)
+                    .map((dependencia) => (
                     <label key={dependencia} className="flex items-center gap-2">
                       <input
                         type="checkbox"
