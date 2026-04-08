@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Select from "react-select";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { fetchDependencias } from "../../lib/dependenciasService";
-import { fetchReportesGraficas } from "../../lib/reportesService";
+import { fetchReportesGraficas, type ReportesGraficasItem, type ReportesGraficasCategory } from "../../lib/reportesService";
 
 interface GraficasPanelProps {
   onClose: () => void;
@@ -14,6 +14,41 @@ interface DependenciaOption {
   value: string;
   label: string;
 }
+
+interface TooltipEntry {
+  dataKey?: string | number | null;
+  name?: string;
+  value?: string | number | null;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipEntry[];
+  label?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
+  if (!active || !payload || payload.length === 0) return null;
+
+  const filteredPayload = payload.filter(
+    (entry) => entry && entry.value !== undefined && Number(entry.value) >= 1
+  );
+
+  if (filteredPayload.length === 0) return null;
+
+  return (
+    <div className="bg-white p-3 rounded-lg border border-gray-200 shadow-lg">
+      <p className="text-sm font-semibold text-slate-700 mb-2">{label}</p>
+      <ul className="space-y-1">
+        {filteredPayload.map((entry) => (
+          <li key={String(entry.dataKey ?? entry.name)} className="text-sm text-slate-700">
+            <span className="font-medium">{entry.name}</span>: {Number(entry.value ?? 0).toFixed(0)}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
 
 type Period = 'dia' | 'semana' | 'mes' | 'ano';
 
@@ -26,7 +61,8 @@ export default function GraficasPanel({ onClose }: GraficasPanelProps) {
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [useDateRange, setUseDateRange] = useState<boolean>(false);
-  const [chartData, setChartData] = useState<{ fecha: string; cantidad: number }[]>([]);
+  const [chartData, setChartData] = useState<ReportesGraficasItem[]>([]);
+  const [categories, setCategories] = useState<ReportesGraficasCategory[]>([]);
   const [totalReportes, setTotalReportes] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,18 +86,21 @@ export default function GraficasPanel({ onClose }: GraficasPanelProps) {
       const dependenciaIds = isAll || selectedDependencias.length === 0 ? null : selectedDependencias.map(d => d.value);
       const start = useDateRange && startDate ? startDate : null;
       const end = useDateRange && endDate ? endDate : null;
-      const { data, error } = await fetchReportesGraficas(dependenciaIds, start, end, period);
+      const { data, categories, error } = await fetchReportesGraficas(dependenciaIds, start, end, period);
 
       if (error) {
         setChartData([]);
+        setCategories([]);
         setTotalReportes(0);
         setError(error);
       } else if (!data || data.length === 0) {
         setChartData([]);
+        setCategories([]);
         setTotalReportes(0);
       } else {
         setChartData(data);
-        setTotalReportes(data.reduce((sum, item) => sum + item.cantidad, 0));
+        setCategories(categories);
+        setTotalReportes(data.reduce((sum, item) => sum + item.total, 0));
       }
 
       setLoading(false);
@@ -194,8 +233,30 @@ export default function GraficasPanel({ onClose }: GraficasPanelProps) {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="fecha" />
                 <YAxis allowDecimals={false} tickFormatter={(value) => String(value)} />
-                <Tooltip formatter={(value) => [Number(value).toFixed(0), 'Reportes']} />
-                <Line type="monotone" dataKey="cantidad" stroke="#8884d8" />
+                <Tooltip content={<CustomTooltip />} />
+                {categories.length > 1 && (
+                  <Line
+                    type="monotone"
+                    dataKey="total"
+                    stroke="#0f172a"
+                    strokeWidth={2}
+                    name="Total"
+                    dot={false}
+                  />
+                )}
+                {categories.map((category, index) => {
+                  const colors = ['#1d4ed8', '#10b981', '#f97316', '#6366f1', '#ec4899', '#14b8a6', '#f59e0b'];
+                  return (
+                    <Line
+                      key={category.key}
+                      type="monotone"
+                      dataKey={category.key}
+                      stroke={colors[index % colors.length]}
+                      name={category.label}
+                      dot={false}
+                    />
+                  );
+                })}
               </LineChart>
             </ResponsiveContainer>
             {error && (

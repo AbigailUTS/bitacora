@@ -90,13 +90,19 @@ export async function fetchReportes(userId: string, isAdmin: boolean): Promise<{
   }
   const userMap = new Map(usersData?.map(u => [u.id, u.email]) || []);
   // Siempre mostrar el email correspondiente a cada usuario_id
-  const transformedData = reportesData.map(reporte => ({
-    ...reporte,
-    user_name: userMap.get(reporte.usuario_id) || 'Desconocido',
-    dependencia_nombre: reporte.dependencias?.nombre || 'Sin dependencia',
-    area_nombre: reporte.areas?.nombre || 'General',
-    clasificacion_nombre: reporte.clasificacion?.nombre || 'Sin clasificar',
-  }));
+  const transformedData = reportesData.map(reporte => {
+    const dependenciaInfo = Array.isArray(reporte.dependencias) ? reporte.dependencias[0] : reporte.dependencias;
+    const areaInfo = Array.isArray(reporte.areas) ? reporte.areas[0] : reporte.areas;
+    const clasificacionInfo = Array.isArray(reporte.clasificacion) ? reporte.clasificacion[0] : reporte.clasificacion;
+
+    return {
+      ...reporte,
+      user_name: userMap.get(reporte.usuario_id) || 'Desconocido',
+      dependencia_nombre: dependenciaInfo?.nombre || 'Sin dependencia',
+      area_nombre: areaInfo?.nombre || 'General',
+      clasificacion_nombre: clasificacionInfo?.nombre || 'Sin clasificar',
+    };
+  });
   return { data: transformedData, error: null };
 }
 
@@ -106,13 +112,26 @@ export async function updateReporte(id: number, updates: Partial<Reporte>): Prom
   return { error: null };
 }
 
+export interface ReportesGraficasItem {
+  fecha: string;
+  total: number;
+  [categoria: string]: string | number;
+}
+
+export interface ReportesGraficasCategory {
+  key: string;
+  label: string;
+}
+
 export async function fetchReportesGraficas(
   dependenciaIds: string[] | null,
   startDate: string | null,
   endDate: string | null,
   period: 'dia' | 'semana' | 'mes' | 'ano'
-): Promise<{ data: { fecha: string; cantidad: number }[] | null; error: string | null }> {
-  let query = supabase.from('reportes').select('created_at, dependencia_id');
+): Promise<{ data: ReportesGraficasItem[] | null; categories: ReportesGraficasCategory[]; error: string | null }> {
+  let query = supabase
+    .from('reportes')
+    .select('created_at, dependencia_id, dependencias:dependencia_id(nombre)');
 
   if (dependenciaIds && dependenciaIds.length > 0) {
     query = query.in('dependencia_id', dependenciaIds.map(id => parseInt(id)));
@@ -127,18 +146,17 @@ export async function fetchReportesGraficas(
   }
 
   const { data, error } = await query;
-  if (error) return { data: null, error: error.message };
+  if (error) return { data: null, categories: [], error: error.message };
 
-  if (!data || data.length === 0) return { data: [], error: null };
+  if (!data || data.length === 0) return { data: [], categories: [], error: null };
 
-  // Agrupar por período
-  const grouped = data.reduce((acc: { [key: string]: number }, reporte) => {
+  const grouped = data.reduce((acc: { [fecha: string]: ReportesGraficasItem }, reporte) => {
     const date = new Date(reporte.created_at);
     let key: string;
 
     switch (period) {
       case 'dia':
-        key = date.toISOString().split('T')[0]; // YYYY-MM-DD
+        key = date.toISOString().split('T')[0];
         break;
       case 'semana':
         const startOfWeek = new Date(date);
@@ -155,13 +173,38 @@ export async function fetchReportesGraficas(
         key = date.toISOString().split('T')[0];
     }
 
-    acc[key] = (acc[key] || 0) + 1;
+    const dependenciaId = reporte.dependencia_id !== null && reporte.dependencia_id !== undefined ? String(reporte.dependencia_id) : 'sin-dependencia';
+    const categoryKey = `dep_${dependenciaId}`;
+
+    if (!acc[key]) {
+      acc[key] = { fecha: key, total: 0 };
+    }
+
+    acc[key].total += 1;
+    acc[key][categoryKey] = (Number(acc[key][categoryKey] ?? 0) + 1) as number;
     return acc;
-  }, {});
+  }, {} as { [fecha: string]: ReportesGraficasItem });
 
-  const result = Object.entries(grouped)
-    .map(([fecha, cantidad]) => ({ fecha, cantidad }))
-    .sort((a, b) => a.fecha.localeCompare(b.fecha));
+  const categoriesMap = new Map<string, string>();
+  data.forEach((reporte) => {
+    const dependenciaId = reporte.dependencia_id !== null && reporte.dependencia_id !== undefined ? String(reporte.dependencia_id) : 'sin-dependencia';
+    const dependenciaInfo = Array.isArray(reporte.dependencias) ? reporte.dependencias[0] : reporte.dependencias;
+    const dependenciaNombre = dependenciaInfo?.nombre ?? 'Sin dependencia';
+    categoriesMap.set(`dep_${dependenciaId}`, dependenciaNombre);
+  });
 
-  return { data: result, error: null };
+  const categories = Array.from(categoriesMap.entries()).map(([key, label]) => ({ key, label }));
+
+  const result = Object.values(grouped)
+    .sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)))
+    .map((item) => {
+      categories.forEach((category) => {
+        if (item[category.key] === undefined) {
+          item[category.key] = 0;
+        }
+      });
+      return item;
+    });
+
+  return { data: result, categories, error: null };
 }
